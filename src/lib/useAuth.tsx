@@ -35,20 +35,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [elevated, setElevated] = useState(false);
 
   async function load(current: Session | null) {
     if (!current) {
       setRole(null);
       setProfile(null);
+      setElevated(false);
       setLoading(false);
       return;
     }
-    const [roleRes, profileRes] = await Promise.all([
+    const [roleRes, profileRes, aal] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", current.user.id).maybeSingle(),
       supabase.from("profiles").select("*").eq("id", current.user.id).maybeSingle(),
+      supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
     ]);
     setRole((roleRes.data?.role as AppRole | undefined) ?? null);
     setProfile((profileRes.data as Profile | null) ?? null);
+    setElevated(aal.data?.currentLevel === "aal2");
     setLoading(false);
   }
 
@@ -63,10 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
-
-  const elevated =
-    (session?.user.app_metadata as { aal?: string } | undefined)?.aal === "aal2" ||
-    Boolean((session as unknown as { aal?: string } | null)?.aal === "aal2");
 
   return (
     <AuthContext.Provider
