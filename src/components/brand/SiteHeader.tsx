@@ -29,12 +29,12 @@ export function SiteHeader() {
         </nav>
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm">
-            <Link to="/auth" search={{ mode: "signin" }}>
+            <Link to="/auth">
               Sign in
             </Link>
           </Button>
           <Button asChild variant="brand" size="sm">
-            <Link to="/auth" search={{ mode: "signup" }}>
+            <Link to="/auth">
               Create account
             </Link>
           </Button>
