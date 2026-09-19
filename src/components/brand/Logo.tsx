@@ -21,7 +21,7 @@ export function Logo({
         className="shrink-0"
       />
       {withWordmark && (
-        <span className="font-display text-lg font-700 leading-none tracking-tight text-brand-ink">
+        <span className="font-display text-lg leading-none tracking-tight text-brand-ink">
           <span className="font-semibold">KABUS</span>
           <span className="font-semibold text-primary">Lot</span>
           <span className="font-semibold text-secondary">In</span>
