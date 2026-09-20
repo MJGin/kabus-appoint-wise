@@ -400,9 +400,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      book_appointment: {
+        Args: {
+          _appt_date: string
+          _block: Database["public"]["Enums"]["time_block"]
+          _lecturer_id: string
+          _reason: string
+        }
+        Returns: string
+      }
+      cancel_appointment: {
+        Args: { _appointment_id: string }
+        Returns: undefined
+      }
+      check_auth_throttle: {
+        Args: { _identifier: string; _scope: string }
+        Returns: boolean
+      }
       current_role_is: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][] }
         Returns: boolean
+      }
+      decide_appointment: {
+        Args: {
+          _appointment_id: string
+          _decision: Database["public"]["Enums"]["appointment_status"]
+          _new_block?: Database["public"]["Enums"]["time_block"]
+          _new_date?: string
+        }
+        Returns: undefined
       }
       has_role: {
         Args: {
@@ -425,6 +451,10 @@ export type Database = {
           _lecturer: string
         }
         Returns: boolean
+      }
+      record_auth_attempt: {
+        Args: { _identifier: string; _scope: string; _succeeded: boolean }
+        Returns: undefined
       }
       write_log: {
         Args: {
