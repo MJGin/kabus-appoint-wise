@@ -152,7 +152,7 @@ function Landing() {
               />
               <div className="absolute -bottom-6 left-4 right-4 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] md:left-8 md:right-auto md:w-72">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Today's blocks
+                  Normal teaching time in a day
                 </p>
                 <ul className="mt-2 space-y-1.5">
                   {blocks.map((b, i) => (
