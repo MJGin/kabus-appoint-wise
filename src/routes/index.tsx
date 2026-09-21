@@ -241,7 +241,7 @@ function Landing() {
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div>
               <h2 className="font-display text-3xl font-semibold tracking-tight text-brand-ink md:text-4xl">
-                Built to refuse what it shouldn't allow
+                Security precautions
               </h2>
               <p className="mt-4 text-muted-foreground">
                 Nothing is reachable without signing in, sign-in attempts and bookings are rate
