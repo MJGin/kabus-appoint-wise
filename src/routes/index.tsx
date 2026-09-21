@@ -112,13 +112,13 @@ function Landing() {
                 <CheckCircle2 className="size-3.5" /> Kabarak University · School of Law
               </span>
               <h1 className="font-display mt-5 text-4xl font-semibold leading-[1.08] tracking-tight text-brand-ink md:text-6xl">
-                Appointments with your lecturers,
-                <span className="text-primary"> without the guesswork.</span>
+                Make appointments with your lecturers;
+                <span className="text-primary"> make it easier to interact.</span>
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-                KABUSLotIn turns the semester timetable into bookable time. Students request a slot
-                a lecturer is genuinely free for, lecturers answer from one dashboard, and the
-                school keeps a clean record of it all.
+                KABUSLotIn turns the semester timetable into bookable time. When a lecturer is
+                free, students can request appointments, and the lecturers can answer with a click
+                on their dashboard.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Button asChild variant="hero" size="lg">
@@ -152,7 +152,7 @@ function Landing() {
               />
               <div className="absolute -bottom-6 left-4 right-4 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] md:left-8 md:right-auto md:w-72">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Today's blocks
+                  Normal teaching time in a day
                 </p>
                 <ul className="mt-2 space-y-1.5">
                   {blocks.map((b, i) => (
@@ -201,20 +201,21 @@ function Landing() {
             ))}
           </div>
           <p className="mt-6 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-foreground">
-            <strong className="font-semibold">Chapel is protected.</strong> No appointment, make-up
-            session or exam can exist on a Wednesday between 11:00 and 14:00 — the attempt is
-            refused, not merely flagged.
+            <strong className="font-semibold">Chapel time is protected.</strong> No appointment,
+            make-up session or exam can exist on a Wednesday between 11:00 and 14:00 — the attempt
+            is refused, not merely flagged.
           </p>
         </section>
 
-        {/* Roles */}
+        {/* Users */}
         <section id="roles" className="border-y border-border bg-card/60">
           <div className="mx-auto w-full max-w-6xl px-5 py-20 md:py-28">
             <h2 className="font-display text-3xl font-semibold tracking-tight text-brand-ink md:text-4xl">
-              One system, five clearly separated views
+              Users
             </h2>
             <p className="mt-3 max-w-2xl text-muted-foreground">
-              Each account sees exactly what it needs and nothing beyond it.
+              Each system user can see exactly what they need and nothing beyond, just to keep you
+              safe.
             </p>
             <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {roles.map((r) => (
@@ -240,7 +241,7 @@ function Landing() {
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div>
               <h2 className="font-display text-3xl font-semibold tracking-tight text-brand-ink md:text-4xl">
-                Built to refuse what it shouldn't allow
+                Security precautions
               </h2>
               <p className="mt-4 text-muted-foreground">
                 Nothing is reachable without signing in, sign-in attempts and bookings are rate
