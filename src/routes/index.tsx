@@ -112,13 +112,13 @@ function Landing() {
                 <CheckCircle2 className="size-3.5" /> Kabarak University · School of Law
               </span>
               <h1 className="font-display mt-5 text-4xl font-semibold leading-[1.08] tracking-tight text-brand-ink md:text-6xl">
-                Appointments with your lecturers,
-                <span className="text-primary"> without the guesswork.</span>
+                Make appointments with your lecturers;
+                <span className="text-primary"> make it easier to interact.</span>
               </h1>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-                KABUSLotIn turns the semester timetable into bookable time. Students request a slot
-                a lecturer is genuinely free for, lecturers answer from one dashboard, and the
-                school keeps a clean record of it all.
+                KABUSLotIn turns the semester timetable into bookable time. When a lecturer is
+                free, students can request appointments, and the lecturers can answer with a click
+                on their dashboard.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Button asChild variant="hero" size="lg">
