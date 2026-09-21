@@ -236,7 +236,7 @@ function SecondStep() {
         setFactorId(verified.id);
         setEnrolling(false);
       } else {
-        const unverified = factors?.totp?.find((f) => f.status === "unverified");
+        const unverified = factors?.totp?.find((f) => String(f.status) !== "verified");
         if (unverified) await supabase.auth.mfa.unenroll({ factorId: unverified.id });
         const { data, error: enrollError } = await supabase.auth.mfa.enroll({
           factorType: "totp",
