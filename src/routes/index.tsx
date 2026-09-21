@@ -201,20 +201,21 @@ function Landing() {
             ))}
           </div>
           <p className="mt-6 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-foreground">
-            <strong className="font-semibold">Chapel is protected.</strong> No appointment, make-up
-            session or exam can exist on a Wednesday between 11:00 and 14:00 — the attempt is
-            refused, not merely flagged.
+            <strong className="font-semibold">Chapel time is protected.</strong> No appointment,
+            make-up session or exam can exist on a Wednesday between 11:00 and 14:00 — the attempt
+            is refused, not merely flagged.
           </p>
         </section>
 
-        {/* Roles */}
+        {/* Users */}
         <section id="roles" className="border-y border-border bg-card/60">
           <div className="mx-auto w-full max-w-6xl px-5 py-20 md:py-28">
             <h2 className="font-display text-3xl font-semibold tracking-tight text-brand-ink md:text-4xl">
-              One system, five clearly separated views
+              Users
             </h2>
             <p className="mt-3 max-w-2xl text-muted-foreground">
-              Each account sees exactly what it needs and nothing beyond it.
+              Each system user can see exactly what they need and nothing beyond, just to keep you
+              safe.
             </p>
             <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {roles.map((r) => (
