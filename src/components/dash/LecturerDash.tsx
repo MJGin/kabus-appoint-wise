@@ -83,7 +83,14 @@ export function LecturerDash({ userId }: { userId: string }) {
   });
 
   const saveProfile = useMutation({
-    mutationFn: async (values: Record<string, string>) => {
+    mutationFn: async (values: {
+      full_name: string;
+      title: string;
+      department: string;
+      office_location: string;
+      photo_url: string;
+      bio: string;
+    }) => {
       const { error: e } = await supabase.from("profiles").update(values).eq("id", userId);
       if (e) throw e;
     },
