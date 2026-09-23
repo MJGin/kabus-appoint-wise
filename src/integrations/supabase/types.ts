@@ -417,6 +417,15 @@ export type Database = {
         Args: { _identifier: string; _scope: string }
         Returns: boolean
       }
+      consume_action_throttle: {
+        Args: {
+          _identifier: string
+          _maximum: number
+          _scope: string
+          _window_minutes: number
+        }
+        Returns: boolean
+      }
       current_role_is: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][] }
         Returns: boolean
