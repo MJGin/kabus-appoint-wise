@@ -10,9 +10,9 @@
 - [x] Administrator: timetable upload, semester dates, exam slots, approved staff emails, usage summaries
 - [x] IT Support: health, error reports, technical log
 - [x] Second step at sign-in for Administrator and IT Support
-- [ ] Rate limits for appointment actions + security headers
-- [ ] Let lecturers read the names of students who booked with them
-- [ ] Replace the landing photo with a wide, restyled version of the first Kabarak University website image
+- [x] Rate limits for appointment actions + security headers
+- [x] Let lecturers read the names of students who booked with them
+- [x] Replace the landing photo with a wide, restyled version of the first Kabarak University website image
 - [ ] Final account, access, desktop and mobile checks
 
 Waiting on user: real timetable data and the approved staff email list (user will upload once the app is ready).
