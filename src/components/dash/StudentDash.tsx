@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { consumeActionRateLimit } from "@/lib/auth.functions";
 import {
   BLOCKS,
   type Block,
@@ -78,6 +79,8 @@ export function StudentDash({ userId }: { userId: string }) {
   const book = useMutation({
     mutationFn: async () => {
       if (!lecturerId || !slot) throw new Error("Pick a time first.");
+      const limit = await consumeActionRateLimit({ data: { action: "booking" } });
+      if (!limit.allowed) throw new Error("Too many requests. Try again in 15 minutes.");
       const { error: e } = await supabase.rpc("book_appointment", {
         _lecturer_id: lecturerId,
         _appt_date: slot.date,

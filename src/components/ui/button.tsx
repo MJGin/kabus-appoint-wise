@@ -17,7 +17,7 @@ const buttonVariants = cva(
         ghost: "hover:bg-muted hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         hero: "bg-primary text-primary-foreground shadow-[var(--shadow-lift)] hover:brightness-110",
-        brand: "bg-secondary text-secondary-foreground shadow-sm hover:brightness-110",
+        brand: "bg-secondary text-secondary-foreground shadow-sm hover:brightness-105",
         brandOutline:
           "border border-secondary/40 bg-transparent text-secondary hover:bg-secondary/10",
       },

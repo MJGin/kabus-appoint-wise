@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { consumeActionRateLimit } from "@/lib/auth.functions";
 import {
   BLOCKS,
   type Block,
@@ -108,6 +109,8 @@ export function LecturerDash({ userId }: { userId: string }) {
       date?: string;
       block?: Block;
     }) => {
+      const limit = await consumeActionRateLimit({ data: { action: "reschedule" } });
+      if (!limit.allowed) throw new Error("Too many changes. Try again in 15 minutes.");
       const { error: e } = await supabase.rpc("decide_appointment", {
         _appointment_id: args.id,
         _decision: args.decision,

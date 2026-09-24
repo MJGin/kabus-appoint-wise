@@ -12,7 +12,7 @@ export function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
+    <section className="rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-lg font-semibold tracking-tight text-brand-ink">
@@ -29,7 +29,7 @@ export function Panel({
 
 export function Empty({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+    <p className="rounded-lg border border-dashed border-border bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground">
       {children}
     </p>
   );
@@ -71,7 +71,7 @@ export function StatusPill({ status }: { status: string }) {
 
 export function Row({ children }: { children: ReactNode }) {
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm">
+    <li className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background px-4 py-3 text-sm">
       {children}
     </li>
   );

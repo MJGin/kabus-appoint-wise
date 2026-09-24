@@ -2,8 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 const identifierSchema = z.object({ identifier: z.string().min(1).max(200) });
 const resultSchema = identifierSchema.extend({ succeeded: z.boolean() });
+const actionSchema = z.object({ action: z.enum(["booking", "reschedule"]) });
 
 async function hash(value: string) {
   const bytes = new TextEncoder().encode(value.trim().toLowerCase());
@@ -59,4 +62,29 @@ export const recordSignInResult = createServerFn({ method: "POST" })
       }),
     ]);
     return { ok: true };
+  });
+
+/** Applies both per-account and per-network limits before sensitive appointment changes. */
+export const consumeActionRateLimit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => actionSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const maximum = data.action === "booking" ? 12 : 20;
+    const [account, network] = await Promise.all([
+      supabaseAdmin.rpc("consume_action_throttle", {
+        _scope: `${data.action}:account`,
+        _identifier: await hash(context.userId),
+        _maximum: maximum,
+        _window_minutes: 15,
+      }),
+      supabaseAdmin.rpc("consume_action_throttle", {
+        _scope: `${data.action}:ip`,
+        _identifier: await hash(callerIp()),
+        _maximum: maximum * 3,
+        _window_minutes: 15,
+      }),
+    ]);
+    if (account.error || network.error) throw new Error("Unable to verify the request limit.");
+    return { allowed: account.data === true && network.data === true };
   });
