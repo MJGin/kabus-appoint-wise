@@ -13,6 +13,8 @@
 - [x] Rate limits for appointment actions + security headers
 - [x] Let lecturers read the names of students who booked with them
 - [x] Replace the landing photo with a wide, restyled version of the first Kabarak University website image
+- [x] Full-width Kabarak University School of Law hero (kabarak-law-hero.jpg)
+- [x] Brand copy reads "Kabarak University School of Law"; trademark mark removed from logo wordmark
 - [ ] Final account, access, desktop and mobile checks
 
 Waiting on user: real timetable data and the approved staff email list (user will upload once the app is ready).
