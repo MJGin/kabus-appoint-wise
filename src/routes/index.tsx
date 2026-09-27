@@ -10,7 +10,6 @@ import {
   Lock,
   KeyRound,
   FileClock,
-  CheckCircle2,
 } from "lucide-react";
 
 import heroImage from "@/assets/kabarak-law-hero.jpg";
@@ -42,7 +41,7 @@ const roles = [
   {
     icon: GraduationCap,
     name: "Student",
-    body: "Sign in with your LAW/ registration number, browse lecturer availability, book an open slot with your reason, and track your own appointments only.",
+    body: "Sign in with your LAW/M/… registration number, browse lecturer availability, book an open slot with your reason, and track your own appointments only.",
   },
   {
     icon: CalendarCheck,
@@ -99,85 +98,78 @@ function Landing() {
       <SiteHeader />
 
       <main>
-        {/* Hero — full-width Kabarak University School of Law image */}
+        {/* Hero — full-width campus banner. Branding stays in the photo; no overlay copy. */}
         <section className="relative overflow-hidden">
-          <div className="relative">
-            <img
-              src={heroImage}
-              alt="Kabarak University School of Law campus"
-              width={1376}
-              height={768}
-              className="h-[min(78vh,720px)] w-full object-cover object-center"
-              fetchPriority="high"
-            />
-            <div
-              aria-hidden
-              className="absolute inset-0"
-              style={{ background: "var(--gradient-hero)" }}
-            />
-            <div className="absolute inset-0 flex items-end">
-              <div className="mx-auto w-full max-w-6xl px-5 pb-14 pt-24 md:pb-20">
-                <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-background/90 px-3 py-1 text-xs font-medium text-primary">
-                  <CheckCircle2 className="size-3.5" /> Kabarak University School of Law
-                </span>
-                <h1 className="font-display mt-5 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight text-background md:text-6xl">
-                  Make appointments with your lecturers;
-                  <span className="text-primary"> make it easier to interact.</span>
-                </h1>
-                <p className="mt-5 max-w-xl text-base leading-relaxed text-background/90 md:text-lg">
-                  KABU SlotIn turns the semester timetable into bookable time. When a lecturer is
-                  free, students can request appointments, and the lecturers can answer with a click
-                  on their dashboard.
-                </p>
-                <div className="mt-8 flex flex-wrap items-center gap-3">
-                  <Button asChild variant="hero" size="lg">
-                    <Link to="/auth">Sign in to your account</Link>
-                  </Button>
-                  <Button asChild variant="brandOutline" size="lg" className="border-background/40 bg-background/10 text-background hover:bg-background/20">
-                    <a href="#how">See how it works</a>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <img
+            src={heroImage}
+            alt="Kabarak University School of Law campus"
+            width={1376}
+            height={768}
+            className="h-[min(70vh,640px)] w-full object-cover object-center"
+            fetchPriority="high"
+          />
 
-          {/* Stats + teaching blocks strip */}
+          {/* Messaging sits below the banner, not on it */}
           <div className="border-b border-border bg-card/80">
-            <div className="mx-auto grid w-full max-w-6xl gap-6 px-5 py-8 md:grid-cols-[1fr_auto] md:items-center">
-              <dl className="grid max-w-md grid-cols-3 gap-4">
-                {[
-                  ["3", "daily blocks"],
-                  ["5", "account types"],
-                  ["0", "unlogged changes"],
-                ].map(([v, l]) => (
-                  <div key={l} className="rounded-xl border border-border bg-background px-3 py-3">
-                    <dt className="font-display text-2xl font-semibold text-primary">{v}</dt>
-                    <dd className="text-xs text-muted-foreground">{l}</dd>
+            <div className="mx-auto w-full max-w-6xl px-5 py-12 md:py-16">
+              <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-start">
+                <div>
+                  <h1 className="font-display max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight text-brand-ink md:text-5xl">
+                    Make appointments with your lecturers;
+                    <span className="text-primary"> make it easier to interact.</span>
+                  </h1>
+                  <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+                    KABU SlotIn turns the semester timetable into bookable time. When a lecturer is
+                    free, students can request appointments, and the lecturers can answer with a click
+                    on their dashboard.
+                  </p>
+                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                    <Button asChild variant="hero" size="lg">
+                      <Link to="/auth">Sign in to your account</Link>
+                    </Button>
+                    <Button asChild variant="brandOutline" size="lg">
+                      <a href="#how">See how it works</a>
+                    </Button>
                   </div>
-                ))}
-              </dl>
-              <div className="rounded-xl border border-border bg-background p-4 md:w-72">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Normal teaching time in a day
-                </p>
-                <ul className="mt-2 space-y-1.5">
-                  {blocks.map((b, i) => (
-                    <li key={b} className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <Clock3 className="size-4 text-primary" /> {b}
-                      </span>
-                      <span
-                        className={
-                          i === 1
-                            ? "rounded-full bg-warning/20 px-2 py-0.5 text-[11px] font-medium text-warning-foreground"
-                            : "rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success"
-                        }
-                      >
-                        {i === 1 ? "Chapel" : "Open"}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                </div>
+
+                <div className="space-y-4">
+                  <dl className="grid grid-cols-3 gap-3">
+                    {[
+                      ["3", "daily blocks"],
+                      ["5", "account types"],
+                      ["0", "unlogged changes"],
+                    ].map(([v, l]) => (
+                      <div key={l} className="rounded-xl border border-border bg-background px-3 py-3">
+                        <dt className="font-display text-2xl font-semibold text-primary">{v}</dt>
+                        <dd className="text-xs text-muted-foreground">{l}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <div className="rounded-xl border border-border bg-background p-4">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Normal teaching time in a day
+                    </p>
+                    <ul className="mt-2 space-y-1.5">
+                      {blocks.map((b, i) => (
+                        <li key={b} className="flex items-center justify-between text-sm">
+                          <span className="flex items-center gap-2">
+                            <Clock3 className="size-4 text-primary" /> {b}
+                          </span>
+                          <span
+                            className={
+                              i === 1
+                                ? "rounded-full bg-warning/20 px-2 py-0.5 text-[11px] font-medium text-warning-foreground"
+                                : "rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success"
+                            }
+                          >
+                            {i === 1 ? "Chapel" : "Open"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

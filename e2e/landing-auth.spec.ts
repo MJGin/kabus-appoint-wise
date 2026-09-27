@@ -82,12 +82,12 @@ test.describe("Auth page", () => {
 
     await page.locator('[role="tab"]', { hasText: "Student" }).click();
     await page.getByLabel("Full name").fill("Test Person");
-    await page.getByLabel("Registration number").fill("ENG/1/2024");
+    await page.getByLabel("Registration number").fill("ENG/M/001/2024/25");
     await page.getByLabel("Password", { exact: true }).fill("Password123!");
     await page.getByLabel("Confirm password").fill("Password123!");
     await page.getByRole("button", { name: /^create account$/i }).click();
 
-    await expect(page.getByText(/LAW\/|must begin with LAW/i).first()).toBeVisible();
+    await expect(page.getByText(/LAW\/M\/|School of Law format/i).first()).toBeVisible();
   });
 
   test("rejects empty sign-in without leaking account existence", async ({ page }) => {

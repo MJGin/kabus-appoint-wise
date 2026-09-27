@@ -165,7 +165,7 @@ function SignIn({ onSwitch }: { onSwitch: (v: View) => void }) {
           <Input
             id="identifier"
             autoComplete="username"
-            placeholder="LAW/1234/2024 or name@kabarak.ac.ke"
+            placeholder="LAW/M/04512/2024/25 or name@kabarak.ac.ke"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
           />
@@ -347,7 +347,9 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
       return;
     }
     if (tab === "student" && !REG_PATTERN.test(reg.trim())) {
-      setError('Registration numbers for the School of Law must start with "LAW/".');
+      setError(
+        "Use the School of Law format LAW/M/REG NO/REG DATE/YEAR, e.g. LAW/M/04512/2024/25.",
+      );
       return;
     }
     if (tab === "staff" && !STAFF_EMAIL.test(email.trim())) {
@@ -430,11 +432,13 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
             <Label htmlFor="reg">Registration number</Label>
             <Input
               id="reg"
-              placeholder="LAW/1234/2024"
+              placeholder="LAW/M/04512/2024/25"
               value={reg}
               onChange={(e) => setReg(e.target.value)}
             />
-            <p className="text-xs text-muted-foreground">Must begin with LAW/</p>
+            <p className="text-xs text-muted-foreground">
+              Format: LAW/M/REG NO/REG DATE/YEAR (e.g. LAW/M/04512/2024/25)
+            </p>
           </TabsContent>
 
           <TabsContent value="staff" className="m-0 space-y-1.5">
@@ -527,7 +531,7 @@ function Forgot({ onSwitch }: { onSwitch: (v: View) => void }) {
             id="recover"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="LAW/1234/2024 or name@kabarak.ac.ke"
+            placeholder="LAW/M/04512/2024/25 or name@kabarak.ac.ke"
           />
         </div>
 

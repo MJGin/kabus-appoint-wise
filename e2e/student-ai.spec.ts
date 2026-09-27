@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const STUDENT = {
-  reg: "LAW/1001/2024",
+  reg: "LAW/M/1001/2024/25",
   password: "KabusTest2026!",
 };
 

@@ -387,8 +387,9 @@ BEGIN
   END IF;
 
   IF requested = 'student' THEN
-    IF reg IS NULL OR upper(reg) NOT LIKE 'LAW/%' THEN
-      RAISE EXCEPTION 'A School of Law registration number must start with LAW/.';
+    -- LAW/M/REG NO/REG DATE/YEAR — year is two digits (e.g. 25)
+    IF reg IS NULL OR upper(reg) !~ '^LAW/M/[0-9]+/[0-9]{4}/[0-9]{2}$' THEN
+      RAISE EXCEPTION 'Use the School of Law format LAW/M/REG NO/REG DATE/YEAR.';
     END IF;
     resolved := 'student';
     INSERT INTO public.profiles (id, full_name, reg_number, email)
