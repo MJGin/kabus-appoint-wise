@@ -27,9 +27,6 @@ export function Logo({
           <span className="font-semibold">KABUS</span>
           <span className="font-semibold text-primary">Lot</span>
           <span className="font-semibold text-secondary">In</span>
-          <sup className="ml-0.5 align-super text-[0.6rem] font-medium text-muted-foreground">
-            ™
-          </sup>
         </span>
       )}
     </span>

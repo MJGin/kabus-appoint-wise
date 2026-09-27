@@ -76,7 +76,7 @@ function AuthPage() {
           </p>
         </div>
         <p className="relative text-xs text-primary-foreground/75">
-          KABUSLotIn™ · Kabarak University School of Law
+          KABUSLotIn · Kabarak University School of Law
         </p>
       </aside>
 

@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "KABUSLotIn — Kabarak School of Law Appointments" },
+      { title: "KABUSLotIn — Kabarak University School of Law Appointments" },
       {
         name: "description",
         content:

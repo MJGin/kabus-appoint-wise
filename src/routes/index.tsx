@@ -13,7 +13,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-import heroImage from "@/assets/hero-campus.jpg";
+import heroImage from "@/assets/kabarak-law-hero.jpg";
 import { Logo } from "@/components/brand/Logo";
 import { SiteHeader } from "@/components/brand/SiteHeader";
 import { Button } from "@/components/ui/button";
@@ -21,13 +21,13 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "KABUSLotIn — Appointments for Kabarak School of Law" },
+      { title: "KABUSLotIn — Kabarak University School of Law Appointments" },
       {
         name: "description",
         content:
           "Book, approve and track lecturer appointments at Kabarak University School of Law. Timetable-aware slots, role-based access and a full activity trail.",
       },
-      { property: "og:title", content: "KABUSLotIn — Appointments for Kabarak School of Law" },
+      { property: "og:title", content: "KABUSLotIn — Kabarak University School of Law Appointments" },
       {
         property: "og:description",
         content:
@@ -99,58 +99,64 @@ function Landing() {
       <SiteHeader />
 
       <main>
-        {/* Hero */}
+        {/* Hero — full-width Kabarak University School of Law image */}
         <section className="relative overflow-hidden">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{ background: "var(--gradient-hero)" }}
-          />
-          <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-5 py-16 md:py-24 lg:grid-cols-[1.05fr_1fr] lg:items-center">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                <CheckCircle2 className="size-3.5" /> Kabarak University · School of Law
-              </span>
-              <h1 className="font-display mt-5 text-4xl font-semibold leading-[1.08] tracking-tight text-brand-ink md:text-6xl">
-                Make appointments with your lecturers;
-                <span className="text-primary"> make it easier to interact.</span>
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-                KABUSLotIn turns the semester timetable into bookable time. When a lecturer is
-                free, students can request appointments, and the lecturers can answer with a click
-                on their dashboard.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Button asChild variant="hero" size="lg">
-                  <Link to="/auth">Sign in to your account</Link>
-                </Button>
-                <Button asChild variant="brandOutline" size="lg">
-                  <a href="#how">See how it works</a>
-                </Button>
+          <div className="relative">
+            <img
+              src={heroImage}
+              alt="Kabarak University School of Law campus"
+              width={1376}
+              height={768}
+              className="h-[min(78vh,720px)] w-full object-cover object-center"
+              fetchPriority="high"
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{ background: "var(--gradient-hero)" }}
+            />
+            <div className="absolute inset-0 flex items-end">
+              <div className="mx-auto w-full max-w-6xl px-5 pb-14 pt-24 md:pb-20">
+                <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-background/90 px-3 py-1 text-xs font-medium text-primary">
+                  <CheckCircle2 className="size-3.5" /> Kabarak University School of Law
+                </span>
+                <h1 className="font-display mt-5 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight text-background md:text-6xl">
+                  Make appointments with your lecturers;
+                  <span className="text-primary"> make it easier to interact.</span>
+                </h1>
+                <p className="mt-5 max-w-xl text-base leading-relaxed text-background/90 md:text-lg">
+                  KABUSLotIn turns the semester timetable into bookable time. When a lecturer is
+                  free, students can request appointments, and the lecturers can answer with a click
+                  on their dashboard.
+                </p>
+                <div className="mt-8 flex flex-wrap items-center gap-3">
+                  <Button asChild variant="hero" size="lg">
+                    <Link to="/auth">Sign in to your account</Link>
+                  </Button>
+                  <Button asChild variant="brandOutline" size="lg" className="border-background/40 bg-background/10 text-background hover:bg-background/20">
+                    <a href="#how">See how it works</a>
+                  </Button>
+                </div>
               </div>
-              <dl className="mt-10 grid max-w-md grid-cols-3 gap-4">
+            </div>
+          </div>
+
+          {/* Stats + teaching blocks strip */}
+          <div className="border-b border-border bg-card/80">
+            <div className="mx-auto grid w-full max-w-6xl gap-6 px-5 py-8 md:grid-cols-[1fr_auto] md:items-center">
+              <dl className="grid max-w-md grid-cols-3 gap-4">
                 {[
                   ["3", "daily blocks"],
                   ["5", "account types"],
                   ["0", "unlogged changes"],
                 ].map(([v, l]) => (
-                  <div key={l} className="rounded-xl border border-border bg-card px-3 py-3">
+                  <div key={l} className="rounded-xl border border-border bg-background px-3 py-3">
                     <dt className="font-display text-2xl font-semibold text-primary">{v}</dt>
                     <dd className="text-xs text-muted-foreground">{l}</dd>
                   </div>
                 ))}
               </dl>
-            </div>
-
-            <div className="relative">
-              <img
-                src={heroImage}
-                alt="Students and faculty at the School of Law"
-                width={1600}
-                height={1104}
-                className="w-full rounded-2xl border border-border object-cover shadow-[var(--shadow-lift)]"
-              />
-              <div className="absolute -bottom-6 left-4 right-4 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] md:left-8 md:right-auto md:w-72">
+              <div className="rounded-xl border border-border bg-background p-4 md:w-72">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Normal teaching time in a day
                 </p>
@@ -167,7 +173,7 @@ function Landing() {
                             : "rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success"
                         }
                       >
-                        {i === 1 ? "Pending" : "Open"}
+                        {i === 1 ? "Chapel" : "Open"}
                       </span>
                     </li>
                   ))}
@@ -268,8 +274,8 @@ function Landing() {
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-5 py-10 md:flex-row md:items-center md:justify-between">
           <Logo />
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Kabarak University School of Law. KABUSLotIn™ is a
-            trademark of Kabarak University.
+            © {new Date().getFullYear()} Kabarak University School of Law. KABUSLotIn is built for
+            the School of Law community.
           </p>
         </div>
       </footer>
