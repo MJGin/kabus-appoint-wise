@@ -23,7 +23,7 @@ export function Logo({
           width={size}
           height={size}
           style={{ width: size, height: size }}
-          className="shrink-0 rounded-lg object-contain"
+          className="shrink-0 object-contain"
         />
       </span>
     );
@@ -37,7 +37,7 @@ export function Logo({
         width={size}
         height={size}
         style={{ width: size, height: size }}
-        className="shrink-0 rounded-lg object-contain"
+        className="shrink-0 object-contain"
       />
       <span className="flex flex-col leading-none">
         <span
