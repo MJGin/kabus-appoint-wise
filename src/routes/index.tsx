@@ -21,13 +21,13 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "KABUSLotIn — Kabarak University School of Law Appointments" },
+      { title: "KABU SlotIn — Kabarak University School of Law Appointments" },
       {
         name: "description",
         content:
           "Book, approve and track lecturer appointments at Kabarak University School of Law. Timetable-aware slots, role-based access and a full activity trail.",
       },
-      { property: "og:title", content: "KABUSLotIn — Kabarak University School of Law Appointments" },
+      { property: "og:title", content: "KABU SlotIn — Kabarak University School of Law Appointments" },
       {
         property: "og:description",
         content:
@@ -125,7 +125,7 @@ function Landing() {
                   <span className="text-primary"> make it easier to interact.</span>
                 </h1>
                 <p className="mt-5 max-w-xl text-base leading-relaxed text-background/90 md:text-lg">
-                  KABUSLotIn turns the semester timetable into bookable time. When a lecturer is
+                  KABU SlotIn turns the semester timetable into bookable time. When a lecturer is
                   free, students can request appointments, and the lecturers can answer with a click
                   on their dashboard.
                 </p>
@@ -274,7 +274,7 @@ function Landing() {
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-5 py-10 md:flex-row md:items-center md:justify-between">
           <Logo />
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Kabarak University School of Law. KABUSLotIn is built for
+            © {new Date().getFullYear()} Kabarak University School of Law. KABU SlotIn is built for
             the School of Law community.
           </p>
         </div>

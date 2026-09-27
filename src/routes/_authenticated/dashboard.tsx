@@ -14,13 +14,13 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Your dashboard — KABUSLotIn" },
+      { title: "Your dashboard — KABU SlotIn" },
       {
         name: "description",
         content:
-          "Your KABUSLotIn work area: appointments, availability and the records your role is allowed to see.",
+          "Your KABU SlotIn work area: appointments, availability and the records your role is allowed to see.",
       },
-      { property: "og:title", content: "Your dashboard — KABUSLotIn" },
+      { property: "og:title", content: "Your dashboard — KABU SlotIn" },
       {
         property: "og:description",
         content: "Appointments, availability and records for your role at the School of Law.",
@@ -77,7 +77,7 @@ function DashboardPage() {
     <div className="min-h-screen bg-background font-sans text-foreground">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5">
-          <Link to="/" aria-label="KABUSLotIn home">
+          <Link to="/" aria-label="KABU SlotIn home">
             <Logo />
           </Link>
           <div className="flex items-center gap-3">

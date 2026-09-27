@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { Empty, Note, Panel, Row, StatusPill } from "@/components/dash/parts";
+import { AiScheduleAssistant } from "@/components/dash/AiScheduleAssistant";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -233,6 +234,13 @@ export function StudentDash({ userId }: { userId: string }) {
             </div>
           )}
         </Panel>
+
+        <AiScheduleAssistant
+          lecturerId={lecturerId}
+          lecturerName={selected?.full_name ?? null}
+          disabled={book.isPending}
+          onPick={(s) => setSlot({ date: s.date, block: s.block })}
+        />
 
         <Panel title="My appointments" description="Only your own requests appear here.">
           {!mine.data?.length ? (

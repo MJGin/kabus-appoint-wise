@@ -20,13 +20,13 @@ import {
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — KABUSLotIn" },
+      { title: "Sign in — KABU SlotIn" },
       {
         name: "description",
         content:
-          "Sign in to KABUSLotIn with your School of Law registration number or your Kabarak University staff email.",
+          "Sign in to KABU SlotIn with your School of Law registration number or your Kabarak University staff email.",
       },
-      { property: "og:title", content: "Sign in — KABUSLotIn" },
+      { property: "og:title", content: "Sign in — KABU SlotIn" },
       {
         property: "og:description",
         content: "Secure access for students, lecturers, the Dean, administration and IT support.",
@@ -76,7 +76,7 @@ function AuthPage() {
           </p>
         </div>
         <p className="relative text-xs text-primary-foreground/75">
-          KABUSLotIn · Kabarak University School of Law
+          KABU SlotIn · Kabarak University School of Law
         </p>
       </aside>
 
@@ -240,7 +240,7 @@ function SecondStep() {
         if (unverified) await supabase.auth.mfa.unenroll({ factorId: unverified.id });
         const { data, error: enrollError } = await supabase.auth.mfa.enroll({
           factorType: "totp",
-          friendlyName: `KABUSLotIn ${Date.now()}`,
+          friendlyName: `KABU SlotIn ${Date.now()}`,
         });
         if (enrollError || !data) throw enrollError ?? new Error("enroll");
         setFactorId(data.id);

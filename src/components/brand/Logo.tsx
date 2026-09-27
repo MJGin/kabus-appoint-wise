@@ -1,9 +1,11 @@
-import logo from "@/assets/kabuslotin-logo.png";
+import mark from "@/assets/kabu-slotin-mark.png";
+import lockup from "@/assets/kabu-slotin-lockup.jpg";
 import { cn } from "@/lib/utils";
 
+/** Full brand lockup from the KABU SlotIn artwork. */
 export function Logo({
   className,
-  size = 36,
+  size = 40,
   withWordmark = true,
   inverse = false,
 }: {
@@ -12,23 +14,59 @@ export function Logo({
   withWordmark?: boolean;
   inverse?: boolean;
 }) {
+  if (!withWordmark) {
+    return (
+      <span className={cn("inline-flex items-center", className)}>
+        <img
+          src={mark}
+          alt="KABU SlotIn"
+          width={size}
+          height={size}
+          style={{ width: size, height: size }}
+          className="shrink-0 rounded-lg object-contain"
+        />
+      </span>
+    );
+  }
+
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
+    <span className={cn("inline-flex items-center gap-3", className)}>
       <img
-        src={logo}
-        alt="KABUSLotIn logo"
+        src={mark}
+        alt=""
         width={size}
         height={size}
         style={{ width: size, height: size }}
-        className="shrink-0"
+        className="shrink-0 rounded-lg object-contain"
       />
-      {withWordmark && (
-        <span className={`font-display text-lg leading-none ${inverse ? "text-background" : "text-brand-ink"}`}>
-          <span className="font-semibold">KABUS</span>
-          <span className="font-semibold text-primary">Lot</span>
-          <span className="font-semibold text-secondary">In</span>
+      <span className="flex flex-col leading-none">
+        <span
+          className={`font-display text-xl font-semibold tracking-tight ${
+            inverse ? "text-background" : "text-brand-ink"
+          }`}
+        >
+          KABU <span className="text-primary">Slot</span>
+          <span className="text-secondary">In</span>
         </span>
-      )}
+        <span
+          className={`mt-1 text-[11px] font-medium ${
+            inverse ? "text-background/75" : "text-muted-foreground"
+          }`}
+        >
+          Slot in. Stay in sync.
+        </span>
+      </span>
     </span>
+  );
+}
+
+/** Full lockup image (mark + type + tagline) as supplied. */
+export function LogoLockup({ className }: { className?: string }) {
+  return (
+    <img
+      src={lockup}
+      alt="KABU SlotIn — Slot in. Stay in sync."
+      className={cn("h-11 w-auto object-contain", className)}
+    />
   );
 }

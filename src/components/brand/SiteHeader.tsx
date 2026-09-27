@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
 
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
@@ -10,13 +12,16 @@ const links = [
 ];
 
 export function SiteHeader() {
+  const [open, setOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-40 border-b border-primary/20 bg-brand-ink/95 text-background backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5">
-        <Link to="/" aria-label="KABUSLotIn home">
+        <Link to="/" aria-label="KABU SlotIn home">
           <Logo inverse />
         </Link>
-        <nav className="hidden items-center gap-7 md:flex">
+
+        <nav className="hidden items-center gap-7 md:flex" aria-label="Primary">
           {links.map((l) => (
             <a
               key={l.href}
@@ -27,19 +32,55 @@ export function SiteHeader() {
             </a>
           ))}
         </nav>
+
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm" className="text-background hover:bg-background/10 hover:text-background">
-            <Link to="/auth">
-              Sign in
-            </Link>
+            <Link to="/auth">Sign in</Link>
           </Button>
-          <Button asChild variant="brand" size="sm">
-            <Link to="/auth">
-              Create account
-            </Link>
+          <Button asChild variant="brand" size="sm" className="hidden sm:inline-flex">
+            <Link to="/auth">Create account</Link>
           </Button>
+          <button
+            type="button"
+            className="inline-flex size-9 items-center justify-center rounded-md text-background md:hidden"
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            aria-label={open ? "Close menu" : "Open menu"}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </div>
       </div>
+
+      {open && (
+        <nav
+          id="mobile-nav"
+          aria-label="Mobile"
+          className="border-t border-background/10 px-5 py-3 md:hidden"
+        >
+          <ul className="flex flex-col gap-1">
+            {links.map((l) => (
+              <li key={l.href}>
+                <a
+                  href={l.href}
+                  className="block rounded-md px-2 py-2 text-sm font-medium text-background/85 hover:bg-background/10 hover:text-primary"
+                  onClick={() => setOpen(false)}
+                >
+                  {l.label}
+                </a>
+              </li>
+            ))}
+            <li className="pt-1">
+              <Button asChild variant="brand" size="sm" className="w-full">
+                <Link to="/auth" onClick={() => setOpen(false)}>
+                  Create account
+                </Link>
+              </Button>
+            </li>
+          </ul>
+        </nav>
+      )}
     </header>
   );
 }
