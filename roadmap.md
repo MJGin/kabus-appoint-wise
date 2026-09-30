@@ -15,6 +15,10 @@
 - [x] Replace the landing photo with a wide, restyled version of the first Kabarak University website image
 - [x] Full-width Kabarak University School of Law hero (kabarak-law-hero.jpg)
 - [x] Brand copy reads "Kabarak University School of Law"; trademark mark removed from logo wordmark
+- [x] Seamless OUK-style logo lockup (mark + KABU SlotIn, no screenshot cage)
+- [x] New campus photo hero with soft blur + KABARAK UNIVERSITY SCHOOL OF LAW title
+- [x] Playwright E2E (desktop/tablet/mobile) + AI slot finder + LAW/M reg format
 - [ ] Final account, access, desktop and mobile checks
+- [ ] Staff/admin seed accounts in Supabase (script ready)
 
 Waiting on user: real timetable data and the approved staff email list (user will upload once the app is ready).

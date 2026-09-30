@@ -1,8 +1,11 @@
 import mark from "@/assets/kabu-slotin-mark.png";
-import lockup from "@/assets/kabu-slotin-lockup.jpg";
+import lockup from "@/assets/kabu-slotin-lockup.png";
 import { cn } from "@/lib/utils";
 
-/** Full brand lockup from the KABU SlotIn artwork. */
+/**
+ * Seamless brand lockup in the Open University of Kenya style:
+ * geometric mark + KABU SlotIn wordmark as one clean asset (no box, no screenshot cage).
+ */
 export function Logo({
   className,
   size = 40,
@@ -29,44 +32,28 @@ export function Logo({
     );
   }
 
+  // Full lockup image (mark + type + tagline) — seamless, like OUK
   return (
-    <span className={cn("inline-flex items-center gap-3", className)}>
+    <span className={cn("inline-flex items-center", className)}>
       <img
-        src={mark}
-        alt=""
-        width={size}
-        height={size}
-        style={{ width: size, height: size }}
-        className="shrink-0 object-contain"
+        src={lockup}
+        alt="KABU SlotIn — Slot in. Stay in sync."
+        className={cn(
+          "h-auto w-auto object-contain",
+          inverse ? "brightness-0 invert" : "",
+        )}
+        style={{ height: size * 1.35, maxHeight: 64 }}
       />
-      <span className="flex flex-col leading-none">
-        <span
-          className={`font-display text-xl font-semibold tracking-tight ${
-            inverse ? "text-background" : "text-brand-ink"
-          }`}
-        >
-          KABU <span className="text-primary">Slot</span>
-          <span className="text-secondary">In</span>
-        </span>
-        <span
-          className={`mt-1 text-[11px] font-medium ${
-            inverse ? "text-background/75" : "text-muted-foreground"
-          }`}
-        >
-          Slot in. Stay in sync.
-        </span>
-      </span>
     </span>
   );
 }
 
-/** Full lockup image (mark + type + tagline) as supplied. */
 export function LogoLockup({ className }: { className?: string }) {
   return (
     <img
       src={lockup}
       alt="KABU SlotIn — Slot in. Stay in sync."
-      className={cn("h-11 w-auto object-contain", className)}
+      className={cn("h-12 w-auto object-contain", className)}
     />
   );
 }
