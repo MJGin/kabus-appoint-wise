@@ -167,7 +167,7 @@ function SignIn({ onSwitch }: { onSwitch: (v: View) => void }) {
           <Input
             id="identifier"
             autoComplete="username"
-            placeholder="LAW/M/04512/2024/25 or name@kabarak.ac.ke"
+            placeholder="LAW/M/1178/05/26 or name@kabarak.ac.ke"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
           />
@@ -350,7 +350,7 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
     }
     if (tab === "student" && !REG_PATTERN.test(reg.trim())) {
       setError(
-        "Use the School of Law format LAW/M/REG NO/REG DATE/YEAR, e.g. LAW/M/04512/2024/25.",
+        "Use the School of Law format LAW/M/REG NO/MONTH/YEAR, e.g. LAW/M/1178/05/26.",
       );
       return;
     }
@@ -434,12 +434,12 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
             <Label htmlFor="reg">Registration number</Label>
             <Input
               id="reg"
-              placeholder="LAW/M/04512/2024/25"
+              placeholder="LAW/M/1178/05/26"
               value={reg}
               onChange={(e) => setReg(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Format: LAW/M/REG NO/REG DATE/YEAR (e.g. LAW/M/04512/2024/25)
+              Format: LAW/M/REG NO/MONTH/YEAR (e.g. LAW/M/1178/05/26)
             </p>
           </TabsContent>
 
@@ -533,7 +533,7 @@ function Forgot({ onSwitch }: { onSwitch: (v: View) => void }) {
             id="recover"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="LAW/M/04512/2024/25 or name@kabarak.ac.ke"
+            placeholder="LAW/M/1178/05/26 or name@kabarak.ac.ke"
           />
         </div>
 
