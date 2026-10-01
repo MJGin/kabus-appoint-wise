@@ -32,6 +32,8 @@ export const Route = createFileRoute("/")({
         content:
           "Timetable-aware appointment booking for students, lecturers, the Dean, administration and IT support.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Landing,
