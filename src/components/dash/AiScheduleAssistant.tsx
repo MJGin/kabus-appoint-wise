@@ -108,7 +108,7 @@ export function AiScheduleAssistant({
                     <Button
                       size="sm"
                       disabled={disabled}
-                      onClick={() => onPick({ date: p.date, block: p.block as never })}
+                      onClick={() => onPick({ date: p.date, block: p.block })}
                     >
                       Use this time
                     </Button>
