@@ -67,10 +67,10 @@ export function nextWeekdays(count: number, from = new Date()) {
 
 /**
  * School of Law registration numbers look like:
- *   LAW/M/REG NO/REG DATE/YEAR
- * e.g. LAW/M/04512/2024/25 — year is the last two digits (23, 24, 25, 26…).
+ *   LAW/M/REG NO/MONTH/YEAR
+ * e.g. LAW/M/1178/05/26 — admitted May (05) 2026 (26).
  */
-export const REG_PATTERN = /^LAW\/M\/\d+\/\d{4}\/\d{2}$/i;
+export const REG_PATTERN = /^LAW\/M\/\d{1,6}\/(0[1-9]|1[0-2])\/\d{2}$/i;
 export const STAFF_EMAIL = /@kabarak\.ac\.ke$/i;
 
 /**
