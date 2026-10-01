@@ -129,7 +129,7 @@ export function StudentDash({ userId }: { userId: string }) {
   const selected = lecturers.data?.find((l) => l.id === lecturerId);
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
+    <div className="grid gap-5 lg:grid-cols-[1fr_1.1fr] lg:items-start">
       <Panel title="Lecturers" description="Pick a lecturer to see when they are free.">
         {lecturers.isLoading ? (
           <Empty>Loading…</Empty>

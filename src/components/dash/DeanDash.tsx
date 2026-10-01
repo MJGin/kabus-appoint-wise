@@ -65,7 +65,7 @@ export function DeanDash() {
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
         <Panel title="All teaching schedules" description="Every lecturer's timetabled blocks.">
           {!timetable.data?.length ? (
             <Empty>No timetable has been uploaded yet.</Empty>

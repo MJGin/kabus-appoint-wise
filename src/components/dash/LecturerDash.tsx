@@ -151,7 +151,7 @@ export function LecturerDash({ userId }: { userId: string }) {
     <div className="space-y-5">
       {error && <Note tone="error">{error}</Note>}
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
         <Panel title="My profile" description="Students see this when they choose a lecturer.">
           <form
             className="space-y-3"
