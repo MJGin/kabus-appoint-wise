@@ -26,6 +26,7 @@
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-brand-ink: var(--brand-ink);
+  --color-brand-blue: var(--brand-blue);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -98,6 +99,8 @@
   --warning-foreground: oklch(0.32 0.03 80);
   /* Midnight Navy #0B1F33 */
   --brand-ink: oklch(0.235 0.05 250);
+  /* Cornflower blue taken from the KABU SlotIn mark */
+  --brand-blue: oklch(0.6346 0.0993 262.68);
   --border: oklch(0.884 0.014 215);
   --input: oklch(0.884 0.014 215);
   --ring: oklch(0.7 0.118 190);

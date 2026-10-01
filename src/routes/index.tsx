@@ -32,6 +32,8 @@ export const Route = createFileRoute("/")({
         content:
           "Timetable-aware appointment booking for students, lecturers, the Dean, administration and IT support.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Landing,
@@ -105,7 +107,7 @@ function Landing() {
             alt="Kabarak University School of Law campus"
             width={1376}
             height={768}
-            className="h-[min(70vh,640px)] w-full object-cover object-center"
+            className="h-auto max-h-[75vh] w-full object-cover object-center"
             fetchPriority="high"
           />
 

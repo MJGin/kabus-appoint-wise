@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Block } from "@/lib/kabuslotin";
 
 const recommendSchema = z.object({
   needs: z.string().min(8).max(800),
@@ -10,24 +11,27 @@ const recommendSchema = z.object({
 
 export type SlotCandidate = {
   date: string;
-  block: string;
+  block: Block;
   blockLabel: string;
   dayLabel: string;
 };
 
 export type SlotRecommendation = {
   date: string;
-  block: string;
+  block: Block;
   blockLabel: string;
   dayLabel: string;
   score: number;
   reason: string;
 };
 
+const BLOCK_VALUES: Block[] = ["block_1", "block_2", "block_3"];
+
 const AI_GATEWAY_URL =
-  process.env.AI_GATEWAY_URL ?? "https://ai-gateway.lovable.dev/v1/chat/completions";
-const AI_GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY ?? process.env.OPENAI_API_KEY ?? "";
-const AI_MODEL = process.env.AI_MODEL ?? "gpt-4o-mini";
+  process.env["AI_GATEWAY_URL"] ?? "https://ai-gateway.lovable.dev/v1/chat/completions";
+const AI_GATEWAY_API_KEY =
+  process.env["AI_GATEWAY_API_KEY"] ?? process.env["OPENAI_API_KEY"] ?? "";
+const AI_MODEL = process.env["AI_MODEL"] ?? "gpt-4o-mini";
 
 /**
  * Student-facing slot recommender.
@@ -125,7 +129,7 @@ function buildCandidates(input: {
     }
     const d = new Date(date + "T00:00:00");
     const dow = d.getDay() === 0 ? 7 : d.getDay();
-    for (const block of ["block_1", "block_2", "block_3"]) {
+    for (const block of BLOCK_VALUES) {
       // Chapel: Wednesday 11:00–14:00 is never bookable.
       if (dow === 3 && block === "block_2") continue;
       const open =
@@ -193,17 +197,22 @@ async function rankWithGateway(input: {
     picks?: { index: number; score: number; reason: string }[];
   };
 
-  return (parsed.picks ?? [])
-    .filter((p) => Number.isInteger(p.index) && input.candidates[p.index])
-    .slice(0, 3)
-    .map((p) => {
-      const c = input.candidates[p.index];
-      return {
-        ...c,
-        score: Math.max(0, Math.min(1, Number(p.score) || 0.5)),
-        reason: String(p.reason || "Matches your request.").slice(0, 180),
-      };
+  const out: SlotRecommendation[] = [];
+  for (const p of parsed.picks ?? []) {
+    if (!Number.isInteger(p.index)) continue;
+    const c = input.candidates[p.index];
+    if (!c) continue;
+    out.push({
+      date: c.date,
+      block: c.block,
+      blockLabel: c.blockLabel,
+      dayLabel: c.dayLabel,
+      score: Math.max(0, Math.min(1, Number(p.score) || 0.5)),
+      reason: String(p.reason || "Matches your request.").slice(0, 180),
     });
+    if (out.length === 3) break;
+  }
+  return out;
 }
 
 function rankLocally(needs: string, candidates: SlotCandidate[]): SlotRecommendation[] {
