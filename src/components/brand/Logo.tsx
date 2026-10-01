@@ -10,7 +10,7 @@ export function LogoMark({
   className,
 }: {
   size?: number;
-  className?: string;
+  className?: string | undefined;
 }) {
   return (
     <svg
