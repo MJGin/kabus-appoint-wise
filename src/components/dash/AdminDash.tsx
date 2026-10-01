@@ -227,7 +227,7 @@ export function AdminDash() {
         </div>
       </Panel>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
         <Panel title="Approved staff emails" description="Only these emails can create staff accounts.">
           <form
             className="flex flex-wrap items-end gap-2"
