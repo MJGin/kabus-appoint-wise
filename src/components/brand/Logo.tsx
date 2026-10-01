@@ -2,8 +2,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * KABU SlotIn brand mark: a "K" built from three rounded schedule blocks —
- * a navy-blue stem, an electric-teal rising arm and a coral returning leg —
- * drawn as vector art so it stays crisp at any size. No trademark symbol.
+ * a cornflower-blue stem, an electric-teal rising arm and a coral returning
+ * leg — drawn as vector art so it stays crisp at any size. No trademark symbol.
  */
 export function LogoMark({
   size = 40,
@@ -24,7 +24,7 @@ export function LogoMark({
       {/* stem with a V-notch cut into its right edge */}
       <path
         d="M9 3H12A6 6 0 0 1 18 9V15L10 24L18 33V39A6 6 0 0 1 12 45H9A6 6 0 0 1 3 39V9A6 6 0 0 1 9 3Z"
-        fill="var(--color-brand-blue)"
+        className="fill-brand-blue"
       />
       {/* rising arm */}
       <rect
@@ -34,7 +34,7 @@ export function LogoMark({
         height="12"
         rx="6"
         transform="rotate(-45 30 14)"
-        fill="var(--primary)"
+        className="fill-primary"
       />
       {/* returning leg */}
       <rect
@@ -44,7 +44,7 @@ export function LogoMark({
         height="12"
         rx="6"
         transform="rotate(45 29 34)"
-        fill="var(--secondary)"
+        className="fill-secondary"
       />
     </svg>
   );
@@ -72,10 +72,7 @@ export function Logo({
     >
       <LogoMark size={size} />
       <span className="flex flex-col" style={{ lineHeight: 1.12 }}>
-        <span
-          className="font-display font-bold tracking-tight"
-          style={{ fontSize: size * 0.44 }}
-        >
+        <span className="font-display font-bold tracking-tight" style={{ fontSize: size * 0.44 }}>
           <span className={inverse ? "text-background" : "text-brand-blue"}>KABU </span>
           <span className={inverse ? "text-background" : "text-brand-blue"}>Slot</span>
           <span className="text-primary">In</span>
