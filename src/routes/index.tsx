@@ -105,7 +105,7 @@ function Landing() {
             alt="Kabarak University School of Law campus"
             width={1376}
             height={768}
-            className="h-[min(70vh,640px)] w-full object-cover object-center"
+            className="h-auto max-h-[75vh] w-full object-cover object-center"
             fetchPriority="high"
           />
 

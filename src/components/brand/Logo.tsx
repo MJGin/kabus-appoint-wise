@@ -71,7 +71,7 @@ export function Logo({
       style={{ gap: Math.max(6, size * 0.18) }}
     >
       <LogoMark size={size} />
-      <span className="flex flex-col" style={{ lineHeight: 1.12 }}>
+      <span className="flex shrink-0 flex-col whitespace-nowrap" style={{ lineHeight: 1.12 }}>
         <span className="font-display font-bold tracking-tight" style={{ fontSize: size * 0.44 }}>
           <span className={inverse ? "text-background" : "text-brand-blue"}>KABU </span>
           <span className={inverse ? "text-background" : "text-brand-blue"}>Slot</span>
