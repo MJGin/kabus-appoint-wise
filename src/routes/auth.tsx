@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, Mail, ShieldCheck } from "lucide-react";
 
 import { Logo } from "@/components/brand/Logo";
+import { ThemeToggle } from "@/components/brand/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,6 +61,7 @@ function AuthPage() {
 
   return (
     <div className="grid min-h-screen bg-background font-sans text-foreground lg:grid-cols-[1fr_1.05fr]">
+      <div className="absolute right-5 top-5 z-10"><ThemeToggle /></div>
       <aside className="relative hidden flex-col justify-between overflow-hidden p-10 lg:flex">
         <div aria-hidden className="absolute inset-0" style={{ background: "var(--gradient-brand)" }} />
         <div className="relative">

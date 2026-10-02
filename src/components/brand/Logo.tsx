@@ -73,14 +73,14 @@ export function Logo({
       <LogoMark size={size} />
       <span className="flex shrink-0 flex-col whitespace-nowrap" style={{ lineHeight: 1.12 }}>
         <span className="font-display font-bold tracking-tight" style={{ fontSize: size * 0.44 }}>
-          <span className={inverse ? "text-background" : "text-brand-blue"}>KABU </span>
-          <span className={inverse ? "text-background" : "text-brand-blue"}>Slot</span>
+          <span className={inverse ? "text-on-brand" : "text-brand-blue"}>KABU </span>
+          <span className={inverse ? "text-on-brand" : "text-brand-blue"}>Slot</span>
           <span className="text-primary">In</span>
         </span>
         <span
           className={cn(
             "font-sans font-medium tracking-wide",
-            inverse ? "text-background/65" : "text-muted-foreground",
+            inverse ? "text-on-brand/65" : "text-muted-foreground",
           )}
           style={{ fontSize: size * 0.25 }}
         >

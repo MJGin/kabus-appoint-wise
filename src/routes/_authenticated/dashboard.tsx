@@ -8,6 +8,7 @@ import { LecturerDash } from "@/components/dash/LecturerDash";
 import { StudentDash } from "@/components/dash/StudentDash";
 import { Empty, Note } from "@/components/dash/parts";
 import { Logo } from "@/components/brand/Logo";
+import { ThemeToggle } from "@/components/brand/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -87,6 +88,7 @@ function DashboardPage() {
               {me.data?.name}
               {role ? ` · ${roleNames[role] ?? role}` : ""}
             </span>
+            <ThemeToggle />
             <Button size="sm" variant="ghost" onClick={signOut}>
               Sign out
             </Button>
