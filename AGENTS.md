@@ -11,14 +11,14 @@
 
 ## Security headers
 
-## Presentation architecture
-
-Keep the light/dark choice on the document root and persist explicit choices in localStorage; shared semantic CSS variables style every route, while the landing reveal reads scroll position without a motion library to honor reduced-motion preferences.
-
 `src/server.ts` builds the security headers per request. The Content Security Policy's `connect-src` must be
 derived from the backend URL environment variable rather than a hardcoded vendor domain: the browser makes its
 auth and data calls to whatever host the backend configuration names, so a fixed allow-list silently breaks
 sign-in (the protected route gate fails and users are bounced back to the sign-in page). Keep any
 local-preview relaxations (development websocket hosts, skipping the forced HTTPS upgrade) gated on the
 request hostname being localhost, so the policy served to real visitors stays strict.
+
+## Presentation architecture
+
+Keep the light/dark choice on the document root and persist explicit choices in localStorage; shared semantic CSS variables style every route, while the landing reveal reads scroll position without a motion library to honor reduced-motion preferences.
 

@@ -197,6 +197,14 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  html.theme-transition :where(body, header, main, section, article, aside, nav, footer, div, button, input, textarea, a, p, span, h1, h2, h3, svg) {
+    transition-property: background-color, color, border-color, fill, stroke;
+    transition-duration: 300ms;
+    transition-timing-function: ease;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
   .slot-rise {
     animation: slot-rise 700ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
   }

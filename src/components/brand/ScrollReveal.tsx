@@ -7,14 +7,8 @@ const words = message.split(" ");
 export function ScrollReveal() {
   const sectionRef = useRef<HTMLElement>(null);
   const [litCount, setLitCount] = useState(0);
-  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const syncMotion = () => setReducedMotion(media.matches);
-    syncMotion();
-    media.addEventListener("change", syncMotion);
-
     let frame = 0;
     const measure = () => {
       frame = 0;
@@ -34,7 +28,6 @@ export function ScrollReveal() {
       window.cancelAnimationFrame(frame);
       window.removeEventListener("scroll", requestMeasure);
       window.removeEventListener("resize", requestMeasure);
-      media.removeEventListener("change", syncMotion);
     };
   }, []);
 
@@ -48,7 +41,7 @@ export function ScrollReveal() {
               <span
                 key={`${index}-${word}`}
                 aria-hidden="true"
-                className={`inline-block transition-opacity duration-150 motion-reduce:transition-none ${reducedMotion || index < litCount ? "opacity-100" : "opacity-25"}`}
+                className={`inline-block transition-opacity duration-150 motion-reduce:opacity-100 motion-reduce:transition-none ${index < litCount ? "opacity-100" : "opacity-25"}`}
               >
                 {word}{index < words.length - 1 ? "\u00a0" : ""}
               </span>

@@ -40,6 +40,7 @@ export function ThemeToggle({ onDarkHeader = false }: { onDarkHeader?: boolean }
   const current = theme ?? "light";
   function toggle() {
     const next = (theme ?? getPreferredTheme()) === "dark" ? "light" : "dark";
+    document.documentElement.classList.add("theme-transition");
     document.documentElement.classList.toggle("dark", next === "dark");
     document.documentElement.style.colorScheme = next;
     setTheme(next);
@@ -48,6 +49,7 @@ export function ThemeToggle({ onDarkHeader = false }: { onDarkHeader?: boolean }
     } catch {
       // The selection remains active for this visit.
     }
+    window.setTimeout(() => document.documentElement.classList.remove("theme-transition"), 350);
   }
 
   return (
