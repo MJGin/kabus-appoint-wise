@@ -22,6 +22,7 @@
       empty states, signed-out visits to the work area redirect to sign-in,
       desktop and mobile layouts clean, no console errors
 - [x] Every content page carries its own title, description and sharing metadata
+- [x] Scroll-linked sticky word reveal on the landing page and saved light/dark mode across the app
 - [ ] Remove the four leftover test student accounts from the live database
       (LAW/1001/2024, LAW/1002/2024, LAW/M/1001/2024/25, LAW/M/1002/2024/25)
       — accounts can only be deleted from the backend user list

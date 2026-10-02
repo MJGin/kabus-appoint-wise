@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { Logo } from "@/components/brand/Logo";
+import { ThemeToggle } from "@/components/brand/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +54,7 @@ function ResetPasswordPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-5 font-sans">
+      <div className="absolute right-5 top-5"><ThemeToggle /></div>
       <div className="w-full max-w-md">
         <Logo />
         <section className="mt-8 rounded-2xl border border-border bg-card p-7 shadow-[var(--shadow-soft)]">

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 
 import { Logo } from "@/components/brand/Logo";
+import { ThemeToggle } from "@/components/brand/ThemeToggle";
 import { Button } from "@/components/ui/button";
 
 const links = [
@@ -15,7 +16,7 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-primary/20 bg-brand-ink/95 text-background backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-primary/20 bg-brand-shell/95 text-on-brand backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5">
         <Link to="/" aria-label="KABU SlotIn home">
           <Logo inverse />
@@ -26,7 +27,7 @@ export function SiteHeader() {
             <a
               key={l.href}
               href={l.href}
-              className="text-sm font-medium text-background/70 transition-colors hover:text-primary"
+              className="text-sm font-medium text-on-brand/70 transition-colors hover:text-primary"
             >
               {l.label}
             </a>
@@ -34,22 +35,25 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm" className="text-background hover:bg-background/10 hover:text-background">
+          <Button asChild variant="ghost" size="sm" className="text-on-brand hover:bg-on-brand/10 hover:text-on-brand">
             <Link to="/auth">Sign in</Link>
           </Button>
           <Button asChild variant="brand" size="sm" className="hidden sm:inline-flex">
             <Link to="/auth">Create account</Link>
           </Button>
-          <button
+          <ThemeToggle onDarkHeader />
+          <Button
             type="button"
-            className="inline-flex size-9 items-center justify-center rounded-md text-background md:hidden"
+            variant="ghost"
+            size="icon"
+            className="text-on-brand hover:bg-on-brand/10 hover:text-on-brand md:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav"
             aria-label={open ? "Close menu" : "Open menu"}
             onClick={() => setOpen((v) => !v)}
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -57,14 +61,14 @@ export function SiteHeader() {
         <nav
           id="mobile-nav"
           aria-label="Mobile"
-          className="border-t border-background/10 px-5 py-3 md:hidden"
+          className="border-t border-on-brand/10 px-5 py-3 md:hidden"
         >
           <ul className="flex flex-col gap-1">
             {links.map((l) => (
               <li key={l.href}>
                 <a
                   href={l.href}
-                  className="block rounded-md px-2 py-2 text-sm font-medium text-background/85 hover:bg-background/10 hover:text-primary"
+                  className="block rounded-md px-2 py-2 text-sm font-medium text-on-brand/85 hover:bg-on-brand/10 hover:text-primary"
                   onClick={() => setOpen(false)}
                 >
                   {l.label}

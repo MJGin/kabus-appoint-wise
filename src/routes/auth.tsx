@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, Mail, ShieldCheck } from "lucide-react";
 
 import { Logo } from "@/components/brand/Logo";
+import { ThemeToggle } from "@/components/brand/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,24 +61,25 @@ function AuthPage() {
 
   return (
     <div className="grid min-h-screen bg-background font-sans text-foreground lg:grid-cols-[1fr_1.05fr]">
+      <div className="absolute right-5 top-5 z-10"><ThemeToggle /></div>
       <aside className="relative hidden flex-col justify-between overflow-hidden p-10 lg:flex">
         <div aria-hidden className="absolute inset-0" style={{ background: "var(--gradient-brand)" }} />
         <div className="relative">
-          <Link to="/" className="inline-flex items-center gap-2 text-primary-foreground/90">
+          <Link to="/" className="inline-flex items-center gap-2 text-on-brand/90">
             <ArrowLeft className="size-4" />
             <span className="text-sm">Back to home</span>
           </Link>
         </div>
         <div className="relative max-w-md">
-          <h2 className="font-display text-3xl font-semibold leading-tight text-primary-foreground">
+          <h2 className="font-display text-3xl font-semibold leading-tight text-on-brand">
             One account, the right view of the School of Law.
           </h2>
-          <p className="mt-4 text-sm leading-relaxed text-primary-foreground/85">
+          <p className="mt-4 text-sm leading-relaxed text-on-brand/85">
             Students book with their registration number. Staff use their Kabarak email. Sensitive
             roles confirm a second step at sign-in.
           </p>
         </div>
-        <p className="relative text-xs text-primary-foreground/75">
+        <p className="relative text-xs text-on-brand/75">
           KABU SlotIn · Kabarak University School of Law
         </p>
       </aside>

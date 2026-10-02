@@ -18,3 +18,7 @@ sign-in (the protected route gate fails and users are bounced back to the sign-i
 local-preview relaxations (development websocket hosts, skipping the forced HTTPS upgrade) gated on the
 request hostname being localhost, so the policy served to real visitors stays strict.
 
+## Presentation architecture
+
+Keep the light/dark choice on the document root and persist explicit choices in localStorage; shared semantic CSS variables style every route, while the landing reveal reads scroll position without a motion library to honor reduced-motion preferences.
+

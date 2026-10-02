@@ -15,6 +15,7 @@ import {
 import heroImage from "@/assets/kabarak-law-hero.jpg";
 import { Logo } from "@/components/brand/Logo";
 import { SiteHeader } from "@/components/brand/SiteHeader";
+import { ScrollReveal } from "@/components/brand/ScrollReveal";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -176,6 +177,8 @@ function Landing() {
             </div>
           </div>
         </section>
+
+        <ScrollReveal />
 
         {/* How it works */}
         <section id="how" className="mx-auto w-full max-w-6xl px-5 py-20 md:py-28">
