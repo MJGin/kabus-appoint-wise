@@ -31,6 +31,7 @@ export function ThemeToggle({ onDarkHeader = false }: { onDarkHeader?: boolean }
       }
       const next = media.matches ? "dark" : "light";
       document.documentElement.classList.toggle("dark", next === "dark");
+      document.documentElement.style.colorScheme = next;
       setTheme(next);
     };
     media.addEventListener("change", followSystem);

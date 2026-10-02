@@ -65,21 +65,21 @@ function AuthPage() {
       <aside className="relative hidden flex-col justify-between overflow-hidden p-10 lg:flex">
         <div aria-hidden className="absolute inset-0" style={{ background: "var(--gradient-brand)" }} />
         <div className="relative">
-          <Link to="/" className="inline-flex items-center gap-2 text-primary-foreground/90">
+          <Link to="/" className="inline-flex items-center gap-2 text-on-brand/90">
             <ArrowLeft className="size-4" />
             <span className="text-sm">Back to home</span>
           </Link>
         </div>
         <div className="relative max-w-md">
-          <h2 className="font-display text-3xl font-semibold leading-tight text-primary-foreground">
+          <h2 className="font-display text-3xl font-semibold leading-tight text-on-brand">
             One account, the right view of the School of Law.
           </h2>
-          <p className="mt-4 text-sm leading-relaxed text-primary-foreground/85">
+          <p className="mt-4 text-sm leading-relaxed text-on-brand/85">
             Students book with their registration number. Staff use their Kabarak email. Sensitive
             roles confirm a second step at sign-in.
           </p>
         </div>
-        <p className="relative text-xs text-primary-foreground/75">
+        <p className="relative text-xs text-on-brand/75">
           KABU SlotIn · Kabarak University School of Law
         </p>
       </aside>
