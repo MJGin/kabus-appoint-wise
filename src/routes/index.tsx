@@ -15,7 +15,7 @@ import {
 import heroImage from "@/assets/kabarak-law-hero.jpg";
 import { Logo } from "@/components/brand/Logo";
 import { SiteHeader } from "@/components/brand/SiteHeader";
-import { ScrollReveal } from "@/components/brand/ScrollReveal";
+import { ScrollFade } from "@/components/brand/ScrollFade";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -100,6 +100,7 @@ function Landing() {
     <div className="min-h-screen bg-background font-sans text-foreground">
       <SiteHeader />
 
+      <ScrollFade>
       <main>
         {/* Hero — full-width campus banner. Branding stays in the photo; no overlay copy. */}
         <section className="relative overflow-hidden">
@@ -108,7 +109,7 @@ function Landing() {
             alt="Kabarak University School of Law campus"
             width={1376}
             height={768}
-            className="h-auto max-h-[75vh] w-full object-cover object-center"
+            className="scroll-fade-item h-auto max-h-[75vh] w-full object-cover object-center"
             fetchPriority="high"
           />
 
@@ -117,16 +118,16 @@ function Landing() {
             <div className="mx-auto w-full max-w-6xl px-5 py-12 md:py-16">
               <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-start">
                 <div>
-                  <h1 className="font-display max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight text-brand-ink md:text-5xl">
+                  <h1 className="scroll-fade-item font-display max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight text-brand-ink md:text-5xl">
                     Make appointments with your lecturers;
                     <span className="text-primary"> make it easier to interact.</span>
                   </h1>
-                  <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+                  <p data-stagger="1" className="scroll-fade-item mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
                     KABU SlotIn turns the semester timetable into bookable time. When a lecturer is
                     free, students can request appointments, and the lecturers can answer with a click
                     on their dashboard.
                   </p>
-                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                  <div data-stagger="2" className="scroll-fade-item mt-8 flex flex-wrap items-center gap-3">
                     <Button asChild variant="hero" size="lg">
                       <Link to="/auth">Sign in to your account</Link>
                     </Button>
@@ -143,13 +144,13 @@ function Landing() {
                       ["5", "account types"],
                       ["0", "unlogged changes"],
                     ].map(([v, l]) => (
-                      <div key={l} className="rounded-xl border border-border bg-background px-3 py-3">
+                      <div key={l} data-stagger={String(Math.min(2, ["daily blocks", "account types", "unlogged changes"].indexOf(l)))} className="scroll-fade-item rounded-xl border border-border bg-background px-3 py-3">
                         <dt className="font-display text-2xl font-semibold text-primary">{v}</dt>
                         <dd className="text-xs text-muted-foreground">{l}</dd>
                       </div>
                     ))}
                   </dl>
-                  <div className="rounded-xl border border-border bg-background p-4">
+                  <div data-stagger="3" className="scroll-fade-item rounded-xl border border-border bg-background p-4">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Normal teaching time in a day
                     </p>
@@ -178,22 +179,21 @@ function Landing() {
           </div>
         </section>
 
-        <ScrollReveal />
-
         {/* How it works */}
         <section id="how" className="mx-auto w-full max-w-6xl px-5 py-20 md:py-28">
-          <h2 className="font-display text-3xl font-semibold tracking-tight text-brand-ink md:text-4xl">
+          <h2 className="scroll-fade-item font-display text-3xl font-semibold tracking-tight text-brand-ink md:text-4xl">
             How booking actually works
           </h2>
-          <p className="mt-3 max-w-2xl text-muted-foreground">
+          <p data-stagger="1" className="scroll-fade-item mt-3 max-w-2xl text-muted-foreground">
             Availability is never typed in twice. It is derived from the timetable the school
             already publishes.
           </p>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
-            {steps.map((s) => (
+            {steps.map((s, index) => (
               <article
                 key={s.n}
-                className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]"
+                data-stagger={String(index)}
+                className="scroll-fade-item rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]"
               >
                 <span className="font-display text-sm font-semibold text-secondary">{s.n}</span>
                 <h3 className="font-display mt-3 text-lg font-semibold text-brand-ink">
@@ -203,7 +203,7 @@ function Landing() {
               </article>
             ))}
           </div>
-          <p className="mt-6 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-foreground">
+          <p className="scroll-fade-item mt-6 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-foreground">
             <strong className="font-semibold">Chapel time is protected.</strong> No appointment,
             make-up session or exam can exist on a Wednesday between 11:00 and 14:00 — the attempt
             is refused, not merely flagged.
@@ -213,18 +213,19 @@ function Landing() {
         {/* Users */}
         <section id="roles" className="border-y border-border bg-card/60">
           <div className="mx-auto w-full max-w-6xl px-5 py-20 md:py-28">
-            <h2 className="font-display text-3xl font-semibold tracking-tight text-brand-ink md:text-4xl">
+            <h2 className="scroll-fade-item font-display text-3xl font-semibold tracking-tight text-brand-ink md:text-4xl">
               Users
             </h2>
-            <p className="mt-3 max-w-2xl text-muted-foreground">
+            <p data-stagger="1" className="scroll-fade-item mt-3 max-w-2xl text-muted-foreground">
               Each system user can see exactly what they need and nothing beyond, just to keep you
               safe.
             </p>
             <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {roles.map((r) => (
+              {roles.map((r, index) => (
                 <article
                   key={r.name}
-                  className="rounded-2xl border border-border bg-background p-6 transition-shadow hover:shadow-[var(--shadow-soft)]"
+                  data-stagger={String(index % 3)}
+                  className="scroll-fade-item rounded-2xl border border-border bg-background p-6 transition-shadow hover:shadow-[var(--shadow-soft)]"
                 >
                   <span className="inline-flex size-10 items-center justify-center rounded-xl bg-secondary/12 text-secondary">
                     <r.icon className="size-5" />
@@ -243,20 +244,22 @@ function Landing() {
         <section id="security" className="mx-auto w-full max-w-6xl px-5 py-20 md:py-28">
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div>
-              <h2 className="font-display text-3xl font-semibold tracking-tight text-brand-ink md:text-4xl">
+              <h2 className="scroll-fade-item font-display text-3xl font-semibold tracking-tight text-brand-ink md:text-4xl">
                 Security precautions
               </h2>
-              <p className="mt-4 text-muted-foreground">
+              <p data-stagger="1" className="scroll-fade-item mt-4 text-muted-foreground">
                 Nothing is reachable without signing in, sign-in attempts and bookings are rate
                 limited, and error messages never reveal whether an account exists.
               </p>
-              <Button asChild variant="hero" size="lg" className="mt-7">
-                <Link to="/auth">Get started</Link>
-              </Button>
+              <div data-stagger="2" className="scroll-fade-item mt-7">
+                <Button asChild variant="hero" size="lg">
+                  <Link to="/auth">Get started</Link>
+                </Button>
+              </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {security.map((s) => (
-                <div key={s.title} className="rounded-2xl border border-border bg-card p-5">
+                <div key={s.title} data-stagger={String(security.indexOf(s) % 2)} className="scroll-fade-item rounded-2xl border border-border bg-card p-5">
                   <s.icon className="size-5 text-primary" />
                   <h3 className="mt-3 text-sm font-semibold text-brand-ink">{s.title}</h3>
                   <p className="mt-1.5 text-sm text-muted-foreground">{s.body}</p>
@@ -276,6 +279,7 @@ function Landing() {
           </p>
         </div>
       </footer>
+      </ScrollFade>
     </div>
   );
 }
