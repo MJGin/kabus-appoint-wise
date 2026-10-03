@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Empty, Note, Panel, Row, StatusPill } from "@/components/dash/parts";
 import { AiScheduleAssistant } from "@/components/dash/AiScheduleAssistant";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { consumeActionRateLimit } from "@/lib/auth.functions";
+import { addToOutbox, flushOutbox, isNetworkError, readOutbox, type OutboxItem } from "@/lib/outbox";
 import {
   BLOCKS,
   type Block,
@@ -25,6 +26,27 @@ export function StudentDash({ userId }: { userId: string }) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [outbox, setOutbox] = useState<OutboxItem[]>([]);
+  const [refusals, setRefusals] = useState<string[]>([]);
+
+  useEffect(() => {
+    const sync = () => setOutbox(readOutbox(userId));
+    const flush = async () => {
+      const msgs = await flushOutbox(userId);
+      if (msgs.length) setRefusals((r) => [...r, ...msgs]);
+      sync();
+      void qc.invalidateQueries({ queryKey: ["my-appointments"] });
+    };
+    sync();
+    void flush();
+    window.addEventListener("online", flush);
+    window.addEventListener("kabu-outbox", sync);
+    return () => {
+      window.removeEventListener("online", flush);
+      window.removeEventListener("kabu-outbox", sync);
+    };
+  }, [userId, qc]);
 
   const lecturers = useQuery({
     queryKey: ["lecturers"],
@@ -80,6 +102,21 @@ export function StudentDash({ userId }: { userId: string }) {
   const book = useMutation({
     mutationFn: async () => {
       if (!lecturerId || !slot) throw new Error("Pick a time first.");
+      const queue = () => {
+        addToOutbox(userId, {
+          id: crypto.randomUUID(),
+          kind: "book",
+          createdAt: new Date().toISOString(),
+          lecturerId,
+          lecturer: lecturers.data?.find((l) => l.id === lecturerId)?.full_name ?? "Lecturer",
+          date: slot.date,
+          block: slot.block,
+          reason: reason.trim(),
+        });
+        return "saved" as const;
+      };
+      if (!navigator.onLine) return queue();
+      try {
       const limit = await consumeActionRateLimit({ data: { action: "booking" } });
       if (!limit.allowed) throw new Error("Too many requests. Try again in 15 minutes.");
       const { error: e } = await supabase.rpc("book_appointment", {
@@ -89,9 +126,15 @@ export function StudentDash({ userId }: { userId: string }) {
         _reason: reason.trim(),
       });
       if (e) throw e;
+      } catch (err) {
+        if (isNetworkError(err)) return queue();
+        throw err;
+      }
+      return "sent" as const;
     },
-    onSuccess: () => {
-      setSent(true);
+    onSuccess: (result) => {
+      setSent(result === "sent");
+      setSaved(result === "saved");
       setError(null);
       setReason("");
       setSlot(null);
@@ -99,14 +142,23 @@ export function StudentDash({ userId }: { userId: string }) {
     },
     onError: (e: Error) => {
       setSent(false);
+      setSaved(false);
       setError(e.message.replace(/^.*?:\s*/, ""));
     },
   });
 
   const cancel = useMutation({
     mutationFn: async (id: string) => {
-      const { error: e } = await supabase.rpc("cancel_appointment", { _appointment_id: id });
-      if (e) throw e;
+      const queue = () =>
+        addToOutbox(userId, { id: crypto.randomUUID(), kind: "cancel", createdAt: new Date().toISOString(), appointmentId: id });
+      if (!navigator.onLine) return queue();
+      try {
+        const { error: e } = await supabase.rpc("cancel_appointment", { _appointment_id: id });
+        if (e) throw e;
+      } catch (err) {
+        if (isNetworkError(err)) return queue();
+        throw err;
+      }
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["my-appointments"] }),
   });
@@ -223,6 +275,12 @@ export function StudentDash({ userId }: { userId: string }) {
 
               {error && <Note tone="error">{error}</Note>}
               {sent && <Note>Your request has been sent. You'll see the answer below.</Note>}
+              {saved && (
+                <Note>
+                  You're offline, so your request is saved on this device. It will be sent
+                  automatically as soon as you're connected again.
+                </Note>
+              )}
 
               <Button
                 variant="hero"
@@ -241,6 +299,26 @@ export function StudentDash({ userId }: { userId: string }) {
           disabled={book.isPending}
           onPick={(s) => setSlot({ date: s.date, block: s.block })}
         />
+
+        {(outbox.length > 0 || refusals.length > 0) && (
+          <Panel title="Waiting to send" description="Saved while offline. These go out automatically once you reconnect.">
+            <ul className="space-y-2">
+              {outbox.map((o) => (
+                <Row key={o.id}>
+                  <span>
+                    {o.kind === "book"
+                      ? `Request to ${o.lecturer} · ${formatDate(o.date)} · ${blockLabel(o.block)}`
+                      : "Cancellation of a pending request"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">Waiting for connection</span>
+                </Row>
+              ))}
+            </ul>
+            {refusals.map((m, i) => (
+              <Note key={i} tone="error">{m}</Note>
+            ))}
+          </Panel>
+        )}
 
         <Panel title="My appointments" description="Only your own requests appear here.">
           {!mine.data?.length ? (

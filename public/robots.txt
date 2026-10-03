@@ -12,3 +12,6 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /dashboard
+
+Sitemap: https://kabus-appoint-wise.lovable.app/sitemap.xml
