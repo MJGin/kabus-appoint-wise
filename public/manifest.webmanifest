@@ -1,0 +1,14 @@
+{
+  "name": "KABU SlotIn — Kabarak School of Law Appointments",
+  "short_name": "KABU SlotIn",
+  "description": "Book and manage lecturer appointments at Kabarak University School of Law.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B1F33",
+  "theme_color": "#0B1F33",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
