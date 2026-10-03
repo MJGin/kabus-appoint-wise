@@ -214,3 +214,22 @@
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .scroll-fade-ready .scroll-fade-item {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 500ms ease-out, transform 500ms ease-out;
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  .scroll-fade-ready .scroll-fade-item.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .scroll-fade-item[data-stagger="1"] { --reveal-delay: 100ms; }
+  .scroll-fade-item[data-stagger="2"] { --reveal-delay: 200ms; }
+  .scroll-fade-item[data-stagger="3"] { --reveal-delay: 300ms; }
+  .scroll-fade-item[data-stagger="4"] { --reveal-delay: 400ms; }
+}
