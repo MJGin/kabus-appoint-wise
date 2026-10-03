@@ -20,5 +20,5 @@ request hostname being localhost, so the policy served to real visitors stays st
 
 ## Presentation architecture
 
-Keep the light/dark choice on the document root and persist explicit choices in localStorage; shared semantic CSS variables style every route, while the landing reveal reads scroll position without a motion library to honor reduced-motion preferences.
+Keep the light/dark choice on the document root and persist explicit choices in localStorage; shared semantic CSS variables style every route, while landing-page entrances use a one-shot Intersection Observer and CSS reduced-motion handling to avoid a motion library.
 
