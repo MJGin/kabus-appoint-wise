@@ -1,3 +1,4 @@
+import { clearOfflineData } from "@/lib/pwa";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 
@@ -68,6 +69,7 @@ function DashboardPage() {
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
+    await clearOfflineData();
     await supabase.auth.signOut();
     await navigate({ to: "/auth", replace: true });
   }
