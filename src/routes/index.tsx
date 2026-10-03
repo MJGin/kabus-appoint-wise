@@ -143,8 +143,8 @@ function Landing() {
                       ["3", "daily blocks"],
                       ["5", "account types"],
                       ["0", "unlogged changes"],
-                    ].map(([v, l]) => (
-                      <div key={l} data-stagger={String(Math.min(2, ["daily blocks", "account types", "unlogged changes"].indexOf(l)))} className="scroll-fade-item rounded-xl border border-border bg-background px-3 py-3">
+                    ].map(([v, l], index) => (
+                      <div key={l} data-stagger={String(index)} className="scroll-fade-item rounded-xl border border-border bg-background px-3 py-3">
                         <dt className="font-display text-2xl font-semibold text-primary">{v}</dt>
                         <dd className="text-xs text-muted-foreground">{l}</dd>
                       </div>
@@ -258,8 +258,8 @@ function Landing() {
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              {security.map((s) => (
-                <div key={s.title} data-stagger={String(security.indexOf(s) % 2)} className="scroll-fade-item rounded-2xl border border-border bg-card p-5">
+              {security.map((s, index) => (
+                <div key={s.title} data-stagger={String(index % 2)} className="scroll-fade-item rounded-2xl border border-border bg-card p-5">
                   <s.icon className="size-5 text-primary" />
                   <h3 className="mt-3 text-sm font-semibold text-brand-ink">{s.title}</h3>
                   <p className="mt-1.5 text-sm text-muted-foreground">{s.body}</p>
