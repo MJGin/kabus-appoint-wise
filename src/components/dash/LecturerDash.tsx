@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Empty, Note, Panel, Row, StatusPill } from "@/components/dash/parts";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { consumeActionRateLimit } from "@/lib/auth.functions";
+import {
+  addToOutbox,
+  describeOutboxItem,
+  flushOutbox,
+  isNetworkError,
+  readOutbox,
+  type OutboxItem,
+} from "@/lib/outbox";
 import {
   BLOCKS,
   type Block,
@@ -21,6 +29,27 @@ export function LecturerDash({ userId }: { userId: string }) {
   const qc = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [outbox, setOutbox] = useState<OutboxItem[]>([]);
+  const [refusals, setRefusals] = useState<string[]>([]);
+
+  useEffect(() => {
+    const sync = () => setOutbox(readOutbox(userId));
+    const flush = async () => {
+      const msgs = await flushOutbox(userId);
+      if (msgs.length) setRefusals((r) => [...r, ...msgs]);
+      sync();
+      void qc.invalidateQueries({ queryKey: ["requests", userId] });
+      void qc.invalidateQueries({ queryKey: ["makeups", userId] });
+    };
+    sync();
+    void flush();
+    window.addEventListener("online", flush);
+    window.addEventListener("kabu-outbox", sync);
+    return () => {
+      window.removeEventListener("online", flush);
+      window.removeEventListener("kabu-outbox", sync);
+    };
+  }, [userId, qc]);
 
   const profile = useQuery({
     queryKey: ["profile", userId],
@@ -102,22 +131,45 @@ export function LecturerDash({ userId }: { userId: string }) {
     onError: (e: Error) => setError(e.message),
   });
 
+  const queue = (item: OutboxItem) => {
+    addToOutbox(userId, item);
+    setError(null);
+  };
+  const stamp = () => ({ id: crypto.randomUUID(), createdAt: new Date().toISOString() });
+
   const decide = useMutation({
     mutationFn: async (args: {
       id: string;
+      student: string;
       decision: "accepted" | "declined";
       date?: string;
       block?: Block;
     }) => {
-      const limit = await consumeActionRateLimit({ data: { action: "reschedule" } });
-      if (!limit.allowed) throw new Error("Too many changes. Try again in 15 minutes.");
-      const { error: e } = await supabase.rpc("decide_appointment", {
-        _appointment_id: args.id,
-        _decision: args.decision,
-        ...(args.date ? { _new_date: args.date } : {}),
-        ...(args.block ? { _new_block: args.block } : {}),
-      });
-      if (e) throw e;
+      const save = () =>
+        queue({
+          ...stamp(),
+          kind: "decide",
+          appointmentId: args.id,
+          student: args.student,
+          decision: args.decision,
+          ...(args.date ? { date: args.date } : {}),
+          ...(args.block ? { block: args.block } : {}),
+        });
+      if (!navigator.onLine) return save();
+      try {
+        const limit = await consumeActionRateLimit({ data: { action: "reschedule" } });
+        if (!limit.allowed) throw new Error("Too many changes. Try again in 15 minutes.");
+        const { error: e } = await supabase.rpc("decide_appointment", {
+          _appointment_id: args.id,
+          _decision: args.decision,
+          ...(args.date ? { _new_date: args.date } : {}),
+          ...(args.block ? { _new_block: args.block } : {}),
+        });
+        if (e) throw e;
+      } catch (err) {
+        if (isNetworkError(err)) return save();
+        throw err;
+      }
     },
     onSuccess: () => {
       setError(null);
@@ -128,10 +180,18 @@ export function LecturerDash({ userId }: { userId: string }) {
 
   const addMakeup = useMutation({
     mutationFn: async (values: { session_date: string; block: Block; note: string }) => {
-      const { error: e } = await supabase
-        .from("makeup_sessions")
-        .insert({ ...values, lecturer_id: userId });
-      if (e) throw e;
+      const save = () =>
+        queue({ ...stamp(), kind: "makeup_add", lecturerId: userId, date: values.session_date, block: values.block, note: values.note });
+      if (!navigator.onLine) return save();
+      try {
+        const { error: e } = await supabase
+          .from("makeup_sessions")
+          .insert({ ...values, lecturer_id: userId });
+        if (e) throw e;
+      } catch (err) {
+        if (isNetworkError(err)) return save();
+        throw err;
+      }
     },
     onSuccess: () => {
       setError(null);
@@ -142,14 +202,39 @@ export function LecturerDash({ userId }: { userId: string }) {
 
   const removeMakeup = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("makeup_sessions").delete().eq("id", id);
+      const save = () => queue({ ...stamp(), kind: "makeup_remove", makeupId: id });
+      if (!navigator.onLine) return save();
+      try {
+        const { error: e } = await supabase.from("makeup_sessions").delete().eq("id", id);
+        if (e) throw e;
+      } catch (err) {
+        if (isNetworkError(err)) return save();
+        throw err;
+      }
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["makeups", userId] }),
+    onError: (e: Error) => setError(e.message.replace(/^.*?:\s*/, "")),
   });
 
   return (
     <div className="space-y-5">
       {error && <Note tone="error">{error}</Note>}
+
+      {(outbox.length > 0 || refusals.length > 0) && (
+        <Panel title="Waiting to send" description="Saved while offline. These go out automatically once you reconnect.">
+          <ul className="space-y-2">
+            {outbox.map((o) => (
+              <Row key={o.id}>
+                <span>{describeOutboxItem(o)}</span>
+                <span className="text-xs text-muted-foreground">Waiting for connection</span>
+              </Row>
+            ))}
+          </ul>
+          {refusals.map((m, i) => (
+            <Note key={i} tone="error">{m}</Note>
+          ))}
+        </Panel>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
         <Panel title="My profile" description="Students see this when they choose a lecturer.">
