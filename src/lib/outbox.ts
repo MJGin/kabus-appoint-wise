@@ -83,9 +83,11 @@ export async function flushOutbox(userId: string): Promise<string[]> {
             _block: item.block,
             _reason: item.reason,
           });
+          if (error && isNetworkError(error)) throw new Error("Failed to fetch");
           if (error) refusals.push(`Booking with ${item.lecturer} on ${item.date} was not accepted: ${error.message}`);
         } else if (item.kind === "cancel") {
           const { error } = await supabase.rpc("cancel_appointment", { _appointment_id: item.appointmentId });
+          if (error && isNetworkError(error)) throw new Error("Failed to fetch");
           if (error) refusals.push(`A cancellation was not accepted: ${error.message}`);
         } else if (item.kind === "decide") {
           const limit = await consumeActionRateLimit({ data: { action: "reschedule" } });
@@ -96,14 +98,17 @@ export async function flushOutbox(userId: string): Promise<string[]> {
             ...(item.date ? { _new_date: item.date } : {}),
             ...(item.block ? { _new_block: item.block } : {}),
           });
+          if (error && isNetworkError(error)) throw new Error("Failed to fetch");
           if (error) refusals.push(`${describeOutboxItem(item)} was not accepted: ${error.message}`);
         } else if (item.kind === "makeup_add") {
           const { error } = await supabase
             .from("makeup_sessions")
             .insert({ lecturer_id: item.lecturerId, session_date: item.date, block: item.block, note: item.note });
+          if (error && isNetworkError(error)) throw new Error("Failed to fetch");
           if (error) refusals.push(`Make-up session on ${item.date} was not accepted: ${error.message}`);
         } else {
           const { error } = await supabase.from("makeup_sessions").delete().eq("id", item.makeupId);
+          if (error && isNetworkError(error)) throw new Error("Failed to fetch");
           if (error) refusals.push(`Removing a make-up session was not accepted: ${error.message}`);
         }
       } catch (e) {
