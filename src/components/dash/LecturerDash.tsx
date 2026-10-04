@@ -341,6 +341,7 @@ export function LecturerDash({ userId }: { userId: string }) {
                       const block = String(f.get("block") ?? "") as Block;
                       decide.mutate({
                         id: r.id,
+                        student: r.student?.full_name || "a student",
                         decision: "accepted",
                         ...(date && block ? { date, block } : {}),
                       });
@@ -376,7 +377,7 @@ export function LecturerDash({ userId }: { userId: string }) {
                         type="button"
                         size="sm"
                         variant="ghost"
-                        onClick={() => decide.mutate({ id: r.id, decision: "declined" })}
+                        onClick={() => decide.mutate({ id: r.id, student: r.student?.full_name || "a student", decision: "declined" })}
                       >
                         Decline
                       </Button>
