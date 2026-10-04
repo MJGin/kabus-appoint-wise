@@ -23,6 +23,7 @@
       desktop and mobile layouts clean, no console errors
 - [x] Every content page carries its own title, description and sharing metadata
 - [x] One-time staggered fade-in-on-scroll on the landing page and saved light/dark mode across the app
+- [x] Lecturers can accept, decline, move bookings and manage make-up sessions offline (sent on reconnect)
 - [ ] Remove the four leftover test student accounts from the live database
       (LAW/1001/2024, LAW/1002/2024, LAW/M/1001/2024/25, LAW/M/1002/2024/25)
       — accounts can only be deleted from the backend user list

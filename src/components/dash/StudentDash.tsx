@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { consumeActionRateLimit } from "@/lib/auth.functions";
-import { addToOutbox, flushOutbox, isNetworkError, readOutbox, type OutboxItem } from "@/lib/outbox";
+import { addToOutbox, describeOutboxItem, flushOutbox, isNetworkError, readOutbox, type OutboxItem } from "@/lib/outbox";
 import {
   BLOCKS,
   type Block,
@@ -306,9 +306,7 @@ export function StudentDash({ userId }: { userId: string }) {
               {outbox.map((o) => (
                 <Row key={o.id}>
                   <span>
-                    {o.kind === "book"
-                      ? `Request to ${o.lecturer} · ${formatDate(o.date)} · ${blockLabel(o.block)}`
-                      : "Cancellation of a pending request"}
+                    {o.kind === "book" ? `Request to ${o.lecturer} · ${formatDate(o.date)} · ${blockLabel(o.block)}` : describeOutboxItem(o)}
                   </span>
                   <span className="text-xs text-muted-foreground">Waiting for connection</span>
                 </Row>

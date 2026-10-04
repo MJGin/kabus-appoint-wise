@@ -4,7 +4,38 @@ import type { Block } from "@/lib/kabuslotin";
 
 export type OutboxItem =
   | { id: string; kind: "book"; createdAt: string; lecturerId: string; lecturer: string; date: string; block: Block; reason: string }
-  | { id: string; kind: "cancel"; createdAt: string; appointmentId: string };
+  | { id: string; kind: "cancel"; createdAt: string; appointmentId: string }
+  | {
+      id: string;
+      kind: "decide";
+      createdAt: string;
+      appointmentId: string;
+      student: string;
+      decision: "accepted" | "declined";
+      date?: string;
+      block?: Block;
+    }
+  | { id: string; kind: "makeup_add"; createdAt: string; lecturerId: string; date: string; block: Block; note: string }
+  | { id: string; kind: "makeup_remove"; createdAt: string; makeupId: string };
+
+export function describeOutboxItem(o: OutboxItem): string {
+  switch (o.kind) {
+    case "book":
+      return `Request to ${o.lecturer} · ${o.date}`;
+    case "cancel":
+      return "Cancellation of a pending request";
+    case "decide":
+      return o.decision === "declined"
+        ? `Decline ${o.student}`
+        : o.date
+          ? `Move ${o.student} to ${o.date}`
+          : `Accept ${o.student}`;
+    case "makeup_add":
+      return `New make-up session · ${o.date}`;
+    case "makeup_remove":
+      return "Remove a make-up session";
+  }
+}
 
 const key = (userId: string) => `kabu-outbox:${userId}`;
 
@@ -52,10 +83,33 @@ export async function flushOutbox(userId: string): Promise<string[]> {
             _block: item.block,
             _reason: item.reason,
           });
+          if (error && isNetworkError(error)) throw new Error("Failed to fetch");
           if (error) refusals.push(`Booking with ${item.lecturer} on ${item.date} was not accepted: ${error.message}`);
-        } else {
+        } else if (item.kind === "cancel") {
           const { error } = await supabase.rpc("cancel_appointment", { _appointment_id: item.appointmentId });
+          if (error && isNetworkError(error)) throw new Error("Failed to fetch");
           if (error) refusals.push(`A cancellation was not accepted: ${error.message}`);
+        } else if (item.kind === "decide") {
+          const limit = await consumeActionRateLimit({ data: { action: "reschedule" } });
+          if (!limit.allowed) break;
+          const { error } = await supabase.rpc("decide_appointment", {
+            _appointment_id: item.appointmentId,
+            _decision: item.decision,
+            ...(item.date ? { _new_date: item.date } : {}),
+            ...(item.block ? { _new_block: item.block } : {}),
+          });
+          if (error && isNetworkError(error)) throw new Error("Failed to fetch");
+          if (error) refusals.push(`${describeOutboxItem(item)} was not accepted: ${error.message}`);
+        } else if (item.kind === "makeup_add") {
+          const { error } = await supabase
+            .from("makeup_sessions")
+            .insert({ lecturer_id: item.lecturerId, session_date: item.date, block: item.block, note: item.note });
+          if (error && isNetworkError(error)) throw new Error("Failed to fetch");
+          if (error) refusals.push(`Make-up session on ${item.date} was not accepted: ${error.message}`);
+        } else {
+          const { error } = await supabase.from("makeup_sessions").delete().eq("id", item.makeupId);
+          if (error && isNetworkError(error)) throw new Error("Failed to fetch");
+          if (error) refusals.push(`Removing a make-up session was not accepted: ${error.message}`);
         }
       } catch (e) {
         if (isNetworkError(e)) break; // still offline — keep it for later
