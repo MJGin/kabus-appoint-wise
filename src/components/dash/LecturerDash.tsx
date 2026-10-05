@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { Camera } from "lucide-react";
+
 import { Empty, Note, Panel, Row, StatusPill } from "@/components/dash/parts";
+import { StaffPhoto } from "@/components/dash/StaffPhoto";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -127,6 +130,27 @@ export function LecturerDash({ userId }: { userId: string }) {
     onSuccess: () => {
       setSaved(true);
       void qc.invalidateQueries({ queryKey: ["profile", userId] });
+    },
+    onError: (e: Error) => setError(e.message),
+  });
+
+  const [photoPath, setPhotoPath] = useState<string | null>(null);
+  const uploadPhoto = useMutation({
+    mutationFn: async (file: File) => {
+      if (file.size > 5 * 1024 * 1024) throw new Error("That photo is larger than 5 MB.");
+      const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase();
+      const path = `${userId}/photo-${Date.now()}.${ext}`;
+      const up = await supabase.storage.from("staff-photos").upload(path, file, { upsert: true, contentType: file.type });
+      if (up.error) throw up.error;
+      const { error: e } = await supabase.from("profiles").update({ photo_url: path }).eq("id", userId);
+      if (e) throw e;
+      return path;
+    },
+    onSuccess: (path) => {
+      setPhotoPath(path);
+      setError(null);
+      void qc.invalidateQueries({ queryKey: ["profile", userId] });
+      void qc.invalidateQueries({ queryKey: ["lecturers"] });
     },
     onError: (e: Error) => setError(e.message),
   });
@@ -275,10 +299,27 @@ export function LecturerDash({ userId }: { userId: string }) {
                 />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="photo_url">Photo link</Label>
-              <Input id="photo_url" name="photo_url" defaultValue={profile.data?.photo_url ?? ""} />
+            <div className="flex items-center gap-4">
+              <label className="group relative cursor-pointer" title="Upload a photo">
+                <StaffPhoto path={photoPath ?? profile.data?.photo_url} name={profile.data?.full_name ?? "Me"} size={80} />
+                <span className="absolute -bottom-1 -right-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                  <Camera className="h-4 w-4" aria-hidden />
+                </span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadPhoto.mutate(file);
+                  }}
+                />
+              </label>
+              <p className="text-sm text-muted-foreground">
+                {uploadPhoto.isPending ? "Uploading…" : "Tap your picture to upload a new photo (up to 5 MB)."}
+              </p>
             </div>
+            <input type="hidden" name="photo_url" value={photoPath ?? profile.data?.photo_url ?? ""} />
             <div className="space-y-1.5">
               <Label htmlFor="bio">About</Label>
               <Textarea id="bio" name="bio" rows={3} defaultValue={profile.data?.bio ?? ""} />

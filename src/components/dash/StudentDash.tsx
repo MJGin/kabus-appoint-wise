@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { Empty, Note, Panel, Row, StatusPill } from "@/components/dash/parts";
 import { AiScheduleAssistant } from "@/components/dash/AiScheduleAssistant";
+import { StaffPhoto } from "@/components/dash/StaffPhoto";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,18 +52,35 @@ export function StudentDash({ userId }: { userId: string }) {
   const lecturers = useQuery({
     queryKey: ["lecturers"],
     queryFn: async () => {
-      const { data, error: e } = await supabase
-        .from("profiles")
-        .select("id, full_name, title, department, bio, photo_url, office_location")
-        .is("reg_number", null)
-        .order("full_name");
-      if (e) throw e;
-      return data ?? [];
+      const [active, listed] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, full_name, title, department, bio, photo_url, office_location")
+          .is("reg_number", null)
+          .order("full_name"),
+        supabase
+          .from("staff_listings")
+          .select("id, full_name, title, department, bio, photo_url, office_location, user_id")
+          .is("user_id", null),
+      ]);
+      if (active.error) throw active.error;
+      const rows = (active.data ?? []).map((p) => ({ ...p, activated: true }));
+      const pending = (listed.data ?? []).map((l) => ({
+        id: `listing:${l.id}`,
+        full_name: l.full_name,
+        title: l.title,
+        department: l.department,
+        bio: l.bio,
+        photo_url: l.photo_url,
+        office_location: l.office_location,
+        activated: false,
+      }));
+      return [...rows, ...pending].sort((x, y) => x.full_name.localeCompare(y.full_name));
     },
   });
 
   const availability = useQuery({
-    enabled: !!lecturerId,
+    enabled: !!lecturerId && !lecturerId.startsWith("listing:"),
     queryKey: ["availability", lecturerId],
     queryFn: async () => {
       const [timetable, makeups, exams, semester] = await Promise.all([
@@ -205,14 +223,20 @@ export function StudentDash({ userId }: { userId: string }) {
                       : "border-border bg-background hover:border-primary/50"
                   }`}
                 >
-                  <p className="text-sm font-semibold text-brand-ink">
-                    {l.title ? `${l.title} ` : ""}
-                    {l.full_name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {[l.department, l.office_location].filter(Boolean).join(" · ") ||
-                      "School of Law"}
-                  </p>
+                  <span className="flex items-center gap-3">
+                    <StaffPhoto path={l.photo_url} name={l.full_name} size={40} />
+                    <span>
+                      <span className="block text-sm font-semibold text-brand-ink">
+                        {l.title ? `${l.title} ` : ""}
+                        {l.full_name}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        {[l.department, l.office_location].filter(Boolean).join(" · ") ||
+                          "School of Law"}
+                        {!l.activated && " · Not yet activated"}
+                      </span>
+                    </span>
+                  </span>
                 </button>
               </li>
             ))}
@@ -227,8 +251,35 @@ export function StudentDash({ userId }: { userId: string }) {
         >
           {!selected ? (
             <Empty>Choose a lecturer on the left.</Empty>
+          ) : !selected.activated ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <StaffPhoto path={selected.photo_url} name={selected.full_name} size={72} />
+                <div>
+                  <p className="font-display text-lg font-semibold text-brand-ink">
+                    {selected.title ? `${selected.title} ` : ""}
+                    {selected.full_name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {[selected.department, selected.office_location].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+              </div>
+              {selected.bio && <p className="text-sm">{selected.bio}</p>}
+              <Note>
+                This lecturer hasn't activated his account yet. Booking opens as soon as he signs
+                in for the first time.
+              </Note>
+            </div>
           ) : (
             <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <StaffPhoto path={selected.photo_url} name={selected.full_name} size={72} />
+                <p className="font-display text-lg font-semibold text-brand-ink">
+                  {selected.title ? `${selected.title} ` : ""}
+                  {selected.full_name}
+                </p>
+              </div>
               {selected.bio && <p className="text-sm text-muted-foreground">{selected.bio}</p>}
               <div className="space-y-2">
                 {days.map((d) => {
@@ -294,7 +345,7 @@ export function StudentDash({ userId }: { userId: string }) {
         </Panel>
 
         <AiScheduleAssistant
-          lecturerId={lecturerId}
+          lecturerId={selected?.activated ? lecturerId : null}
           lecturerName={selected?.full_name ?? null}
           disabled={book.isPending}
           onPick={(s) => setSlot({ date: s.date, block: s.block })}
