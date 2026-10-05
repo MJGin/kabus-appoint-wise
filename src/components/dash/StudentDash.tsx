@@ -345,7 +345,7 @@ export function StudentDash({ userId }: { userId: string }) {
         </Panel>
 
         <AiScheduleAssistant
-          lecturerId={lecturerId}
+          lecturerId={selected?.activated ? lecturerId : null}
           lecturerName={selected?.full_name ?? null}
           disabled={book.isPending}
           onPick={(s) => setSlot({ date: s.date, block: s.block })}
