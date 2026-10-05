@@ -51,13 +51,30 @@ export function StudentDash({ userId }: { userId: string }) {
   const lecturers = useQuery({
     queryKey: ["lecturers"],
     queryFn: async () => {
-      const { data, error: e } = await supabase
-        .from("profiles")
-        .select("id, full_name, title, department, bio, photo_url, office_location")
-        .is("reg_number", null)
-        .order("full_name");
-      if (e) throw e;
-      return data ?? [];
+      const [active, listed] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, full_name, title, department, bio, photo_url, office_location")
+          .is("reg_number", null)
+          .order("full_name"),
+        supabase
+          .from("staff_listings")
+          .select("id, full_name, title, department, bio, photo_url, office_location, user_id")
+          .is("user_id", null),
+      ]);
+      if (active.error) throw active.error;
+      const rows = (active.data ?? []).map((p) => ({ ...p, activated: true }));
+      const pending = (listed.data ?? []).map((l) => ({
+        id: `listing:${l.id}`,
+        full_name: l.full_name,
+        title: l.title,
+        department: l.department,
+        bio: l.bio,
+        photo_url: l.photo_url,
+        office_location: l.office_location,
+        activated: false,
+      }));
+      return [...rows, ...pending].sort((x, y) => x.full_name.localeCompare(y.full_name));
     },
   });
 
