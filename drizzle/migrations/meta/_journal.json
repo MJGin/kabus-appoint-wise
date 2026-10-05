@@ -15,6 +15,13 @@
       "when": 1791193740846,
       "tag": "0001_staff_listings_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791193752404,
+      "tag": "0002_staff_photos_signed_in_read",
+      "breakpoints": true
     }
   ]
 }
