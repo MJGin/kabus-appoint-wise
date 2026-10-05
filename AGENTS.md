@@ -22,3 +22,7 @@ request hostname being localhost, so the policy served to real visitors stays st
 
 Keep the light/dark choice on the document root and persist explicit choices in localStorage; shared semantic CSS variables style every route, while landing-page entrances use a one-shot Intersection Observer and CSS reduced-motion handling to avoid a motion library.
 
+
+## Staff listings
+
+Lecturer profiles can be pre-published in a listings table keyed by email; the sign-up trigger copies the listing into the new profile and attaches its stored classes, so students see staff before they activate while booking still requires a real account. Staff photos live in a private bucket read through short-lived signed links, because public buckets are blocked for this workspace.
