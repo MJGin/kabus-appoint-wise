@@ -32,8 +32,7 @@
 
 - [x] May–August 2026 semester created (active) from the uploaded timetable PDF
 - [x] Dennis Nkarichia (dnkarichia@kabarak.ac.ke) approved as lecturer
-- [ ] Once Dennis creates his account, attach his classes: KLS 115 Digital Literacy
-      for Lawyers A (Fri 08:00–11:00) and B (Fri 11:00–14:00)
+- [x] Dennis has a ready-made profile students can see; his Friday classes attach automatically when he signs up
 - [ ] Remaining staff emails from the timetable PDF still to be approved
 
 Waiting on user: Dennis Nkarichia to create his account at the sign-up page, and the remaining staff email addresses.
