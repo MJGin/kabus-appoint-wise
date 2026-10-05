@@ -330,6 +330,48 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_listings: {
+        Row: {
+          bio: string | null
+          classes: Json
+          created_at: string
+          department: string | null
+          email: string
+          full_name: string
+          id: string
+          office_location: string | null
+          photo_url: string | null
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bio?: string | null
+          classes?: Json
+          created_at?: string
+          department?: string | null
+          email: string
+          full_name: string
+          id?: string
+          office_location?: string | null
+          photo_url?: string | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bio?: string | null
+          classes?: Json
+          created_at?: string
+          department?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          office_location?: string | null
+          photo_url?: string | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       timetable_slots: {
         Row: {
           block: Database["public"]["Enums"]["time_block"]
