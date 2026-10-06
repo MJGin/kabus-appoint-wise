@@ -60,7 +60,7 @@ export function StudentDash({ userId }: { userId: string }) {
           .order("full_name"),
         supabase
           .from("staff_listings")
-          .select("id, full_name, title, department, bio, photo_url, office_location, user_id")
+          .select("id, full_name, title, department, bio, photo_url, office_location, user_id, classes")
           .is("user_id", null),
       ]);
       if (active.error) throw active.error;
