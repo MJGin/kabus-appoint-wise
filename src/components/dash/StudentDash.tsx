@@ -186,12 +186,23 @@ export function StudentDash({ userId }: { userId: string }) {
 
   const days = nextWeekdays(10);
   const a = availability.data;
+  const sel = lecturers.data?.find((l) => l.id === lecturerId);
   function classBlocks(date: string): Block[] {
-    if (!a) return [];
     const dow = isoDow(date);
+    if (sel && !sel.activated)
+      return ((sel as { classes?: { day_of_week: number; block: string }[] }).classes ?? [])
+        .filter((c) => c.day_of_week === dow)
+        .map((c) => c.block as Block);
+    if (!a) return [];
     return a.timetable.filter((t) => t.day_of_week === dow).map((t) => t.block as Block);
   }
   function openBlocks(date: string): Block[] {
+    if (sel && !sel.activated) {
+      const order = BLOCKS.map((b) => b.value);
+      const classes = classBlocks(date);
+      const last = classes.length ? Math.max(...classes.map((c) => order.indexOf(c))) : -1;
+      return order.filter((b, i) => !isChapel(date, b) && last >= 0 && i > last);
+    }
     if (!a) return [];
     if (a.semester && (date < a.semester.start_date || date > a.semester.end_date)) return [];
     const order = BLOCKS.map((b) => b.value);
