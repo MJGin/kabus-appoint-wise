@@ -74,6 +74,9 @@ export function StudentDash({ userId }: { userId: string }) {
         photo_url: l.photo_url,
         office_location: l.office_location,
         activated: false,
+        classes: Array.isArray(l.classes)
+          ? (l.classes as { day_of_week: number; block: string }[])
+          : [],
       }));
       return [...rows, ...pending].sort((x, y) => x.full_name.localeCompare(y.full_name));
     },
