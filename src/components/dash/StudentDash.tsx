@@ -183,14 +183,21 @@ export function StudentDash({ userId }: { userId: string }) {
 
   const days = nextWeekdays(10);
   const a = availability.data;
+  function classBlocks(date: string): Block[] {
+    if (!a) return [];
+    const dow = isoDow(date);
+    return a.timetable.filter((t) => t.day_of_week === dow).map((t) => t.block as Block);
+  }
   function openBlocks(date: string): Block[] {
     if (!a) return [];
     if (a.semester && (date < a.semester.start_date || date > a.semester.end_date)) return [];
-    const dow = isoDow(date);
-    return BLOCKS.map((b) => b.value).filter(
-      (b) =>
+    const order = BLOCKS.map((b) => b.value);
+    const classes = classBlocks(date);
+    const last = classes.length ? Math.max(...classes.map((c) => order.indexOf(c))) : -1;
+    return order.filter(
+      (b, i) =>
         !isChapel(date, b) &&
-        (a.timetable.some((t) => t.day_of_week === dow && t.block === b) ||
+        ((last >= 0 && i > last) ||
           a.makeups.some((m) => m.session_date === date && m.block === b) ||
           a.exams.some((x) => x.exam_date === date && x.block === b)),
     );
@@ -281,14 +288,35 @@ export function StudentDash({ userId }: { userId: string }) {
                 </p>
               </div>
               {selected.bio && <p className="text-sm text-muted-foreground">{selected.bio}</p>}
+              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-sm bg-secondary/25 ring-1 ring-secondary/50" /> Teaching day
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-sm bg-primary" /> Free to book
+                </span>
+              </div>
               <div className="space-y-2">
                 {days.map((d) => {
                   const open = openBlocks(d);
+                  const classes = classBlocks(d);
                   return (
-                    <div key={d} className="flex flex-wrap items-center gap-2">
-                      <span className="w-28 text-sm text-muted-foreground">{formatDate(d)}</span>
+                    <div
+                      key={d}
+                      className={`flex flex-wrap items-center gap-2 rounded-lg px-2 py-1.5 ${
+                        classes.length ? "bg-secondary/15 ring-1 ring-secondary/40" : ""
+                      }`}
+                    >
+                      <span className={`w-28 text-sm ${classes.length ? "font-semibold text-brand-ink" : "text-muted-foreground"}`}>
+                        {formatDate(d)}
+                      </span>
+                      {classes.map((b) => (
+                        <span key={`c-${b}`} className="rounded-full bg-secondary/25 px-3 py-1 text-xs font-medium text-brand-ink">
+                          In class · {blockLabel(b)}
+                        </span>
+                      ))}
                       {open.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">No available time</span>
+                        !classes.length && <span className="text-xs text-muted-foreground">No available time</span>
                       ) : (
                         open.map((b) => (
                           <button
