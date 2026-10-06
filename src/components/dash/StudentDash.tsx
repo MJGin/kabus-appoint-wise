@@ -60,7 +60,7 @@ export function StudentDash({ userId }: { userId: string }) {
           .order("full_name"),
         supabase
           .from("staff_listings")
-          .select("id, full_name, title, department, bio, photo_url, office_location, user_id")
+          .select("id, full_name, title, department, bio, photo_url, office_location, user_id, classes")
           .is("user_id", null),
       ]);
       if (active.error) throw active.error;
@@ -74,6 +74,9 @@ export function StudentDash({ userId }: { userId: string }) {
         photo_url: l.photo_url,
         office_location: l.office_location,
         activated: false,
+        classes: Array.isArray(l.classes)
+          ? (l.classes as { day_of_week: number; block: string }[])
+          : [],
       }));
       return [...rows, ...pending].sort((x, y) => x.full_name.localeCompare(y.full_name));
     },
@@ -183,12 +186,23 @@ export function StudentDash({ userId }: { userId: string }) {
 
   const days = nextWeekdays(10);
   const a = availability.data;
+  const sel = lecturers.data?.find((l) => l.id === lecturerId);
   function classBlocks(date: string): Block[] {
-    if (!a) return [];
     const dow = isoDow(date);
+    if (sel && !sel.activated)
+      return ((sel as { classes?: { day_of_week: number; block: string }[] }).classes ?? [])
+        .filter((c) => c.day_of_week === dow)
+        .map((c) => c.block as Block);
+    if (!a) return [];
     return a.timetable.filter((t) => t.day_of_week === dow).map((t) => t.block as Block);
   }
   function openBlocks(date: string): Block[] {
+    if (sel && !sel.activated) {
+      const order = BLOCKS.map((b) => b.value);
+      const classes = classBlocks(date);
+      const last = classes.length ? Math.max(...classes.map((c) => order.indexOf(c))) : -1;
+      return order.filter((b, i) => !isChapel(date, b) && last >= 0 && i > last);
+    }
     if (!a) return [];
     if (a.semester && (date < a.semester.start_date || date > a.semester.end_date)) return [];
     const order = BLOCKS.map((b) => b.value);
@@ -273,6 +287,45 @@ export function StudentDash({ userId }: { userId: string }) {
                 </div>
               </div>
               {selected.bio && <p className="text-sm">{selected.bio}</p>}
+              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-sm bg-secondary/25 ring-1 ring-secondary/50" /> Teaching day
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-sm bg-primary" /> Free to book
+                </span>
+              </div>
+              <div className="space-y-2">
+                {days.map((d) => {
+                  const open = openBlocks(d);
+                  const classes = classBlocks(d);
+                  return (
+                    <div
+                      key={d}
+                      className={`flex flex-wrap items-center gap-2 rounded-lg px-2 py-1.5 ${
+                        classes.length ? "bg-secondary/15 ring-1 ring-secondary/40" : ""
+                      }`}
+                    >
+                      <span className={`w-28 text-sm ${classes.length ? "font-semibold text-brand-ink" : "text-muted-foreground"}`}>
+                        {formatDate(d)}
+                      </span>
+                      {classes.map((b) => (
+                        <span key={`c-${b}`} className="rounded-full bg-secondary/25 px-3 py-1 text-xs font-medium text-brand-ink">
+                          In class · {blockLabel(b)}
+                        </span>
+                      ))}
+                      {open.map((b) => (
+                        <span key={b} className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
+                          {blockLabel(b)}
+                        </span>
+                      ))}
+                      {!classes.length && !open.length && (
+                        <span className="text-xs text-muted-foreground">No available time</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
               <Note>
                 This lecturer hasn't activated his account yet. Booking opens as soon as he signs
                 in for the first time.
