@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { supabase } from "@/integrations/supabase/client";
 import { checkSignInAllowed, recordSignInResult } from "@/lib/auth.functions";
 import {
@@ -185,9 +186,8 @@ function SignIn({ onSwitch }: { onSwitch: (v: View) => void }) {
               Forgot password?
             </button>
           </div>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -461,9 +461,8 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
 
           <div className="space-y-1.5">
             <Label htmlFor="new-password">Password</Label>
-            <Input
+            <PasswordInput
               id="new-password"
-              type="password"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -471,9 +470,8 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="confirm-password">Confirm password</Label>
-            <Input
+            <PasswordInput
               id="confirm-password"
-              type="password"
               autoComplete="new-password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}

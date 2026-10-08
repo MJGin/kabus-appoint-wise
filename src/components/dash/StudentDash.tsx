@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Empty, Note, Panel, Row, StatusPill } from "@/components/dash/parts";
 import { AiScheduleAssistant } from "@/components/dash/AiScheduleAssistant";
 import { StaffPhoto } from "@/components/dash/StaffPhoto";
+import { TimetableCalendar } from "@/components/calendar/TimetableCalendar";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -473,6 +474,10 @@ export function StudentDash({ userId }: { userId: string }) {
               ))}
             </ul>
           )}
+        </Panel>
+
+        <Panel title="Weekly Timetable" description="School of Law teaching timetable for the active semester.">
+          <TimetableCalendar />
         </Panel>
       </div>
     </div>

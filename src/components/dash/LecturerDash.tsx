@@ -5,6 +5,7 @@ import { Camera } from "lucide-react";
 
 import { Empty, Note, Panel, Row, StatusPill } from "@/components/dash/parts";
 import { StaffPhoto } from "@/components/dash/StaffPhoto";
+import { TimetableCalendar } from "@/components/calendar/TimetableCalendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -349,6 +350,10 @@ export function LecturerDash({ userId }: { userId: string }) {
               ))}
             </ul>
           )}
+        </Panel>
+
+        <Panel title="Weekly Timetable" description="School of Law teaching timetable for the active semester.">
+          <TimetableCalendar />
         </Panel>
       </div>
 

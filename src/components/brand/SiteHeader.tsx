@@ -1,10 +1,12 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 
 import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/brand/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import { NotificationsBell } from "@/components/NotificationsBell";
+import { supabase } from "@/integrations/supabase/client";
 
 const links = [
   { label: "How it works", href: "#how" },
@@ -41,6 +43,7 @@ export function SiteHeader() {
           <Button asChild variant="brand" size="sm" className="hidden sm:inline-flex">
             <Link to="/auth">Create account</Link>
           </Button>
+          <NotificationsBell />
           <ThemeToggle onDarkHeader />
           <Button
             type="button"
