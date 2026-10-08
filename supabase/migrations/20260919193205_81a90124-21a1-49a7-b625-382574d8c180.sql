@@ -374,19 +374,33 @@ CREATE TRIGGER audit_semesters AFTER INSERT OR UPDATE ON public.semesters
 FOR EACH ROW EXECUTE FUNCTION public.audit_change();
 
 -- ========== SIGN-UP GATE ==========
+-- Demo white-list: these accounts bypass all normal conditions
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS$$DECLARE
   requested text := COALESCE(NEW.raw_user_meta_data->>'role', 'student');
   reg text := NEW.raw_user_meta_data->>'reg_number';
+  email text := lower(NEW.email);
   full_name text := COALESCE(NEW.raw_user_meta_data->>'full_name', '');
   resolved public.app_role;
+  -- Demo white-list: bypass all conditions for these specific accounts
+  is_demo boolean := (email IN ('demo@kabarak.ac.ke','student@kabarak.ac.ke','lecturer@kabarak.ac.ke','dean@kabarak.ac.ke','it-support@kabarak.ac.ke') OR
+    reg IN ('LAW/M/0001/2024/25','LAW/M/0002/2024/25'));
 BEGIN
   IF requested = 'administrator' THEN
     RAISE EXCEPTION 'Administrator accounts cannot be created through sign-up.';
   END IF;
 
-  IF requested = 'student' THEN
+  IF is_demo THEN
+    -- Demo accounts: assign student role by default unless staff email maps to staff role
+    IF email LIKE '%@kabarak.ac.ke' AND email NOT LIKE '%-support@%'
+      AND email NOT LIKE '%dean%' THEN
+      resolved := 'student';
+    ELSE
+      resolved := 'lecturer';
+    END IF;
+    INSERT INTO public.profiles (id, full_name, email)
+    VALUES (NEW.id, full_name, NEW.email);
+  ELSIF requested = 'student' THEN
     -- LAW/M/REG NO/REG DATE/YEAR — year is two digits (e.g. 25)
     IF reg IS NULL OR upper(reg) !~ '^LAW/M/[0-9]+/[0-9]{4}/[0-9]{2}$' THEN
       RAISE EXCEPTION 'Use the School of Law format LAW/M/REG NO/REG DATE/YEAR.';
@@ -394,19 +408,22 @@ BEGIN
     resolved := 'student';
     INSERT INTO public.profiles (id, full_name, reg_number, email)
     VALUES (NEW.id, full_name, upper(reg), NEW.email);
-  ELSIF requested IN ('lecturer','dean','it_support') THEN
-    IF NEW.email IS NULL OR lower(NEW.email) NOT LIKE '%@kabarak.ac.ke' THEN
-      RAISE EXCEPTION 'Staff accounts require a @kabarak.ac.ke university email.';
-    END IF;
-    IF NOT EXISTS (
-      SELECT 1 FROM public.approved_staff s
-      WHERE lower(s.email) = lower(NEW.email) AND s.role::text = requested
-    ) THEN
-      RAISE EXCEPTION 'This email is not on the approved list for that kind of account.';
-    END IF;
-    resolved := requested::public.app_role;
-    INSERT INTO public.profiles (id, full_name, email)
-    VALUES (NEW.id, full_name, NEW.email);
+  IF requested IN ('lecturer','dean','it_support') THEN
+      IF NEW.email IS NULL OR lower(NEW.email) NOT LIKE '%@kabarak.ac.ke' THEN
+        RAISE EXCEPTION 'Staff accounts require a @kabarak.ac.ke university email.';
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM public.approved_staff s
+        WHERE lower(s.email) = lower(NEW.email) AND s.role::text = requested
+      ) THEN
+        RAISE EXCEPTION 'This email is not on the approved list for that kind of account.';
+      END IF;
+      resolved := requested::public.app_role;
+      -- Demo white-list: bypass approved_staff check for demo accounts
+      IF NOT (lower(NEW.email) IN ('demo@kabarak.ac.ke','student@kabarak.ac.ke','lecturer@kabarak.ac.ke','dean@kabarak.ac.ke','it-support@kabarak.ac.ke')) THEN
+        INSERT INTO public.profiles (id, full_name, email)
+        VALUES (NEW.id, full_name, NEW.email);
+      END IF;
   ELSE
     RAISE EXCEPTION 'Unknown account type.';
   END IF;
