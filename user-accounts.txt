@@ -1,0 +1,131 @@
+KABUS-APPOINT-WISE USER ACCOUNTS
+=================================
+Generated: 2026-10-08
+Default Password for ALL accounts: KabusTest2026!
+
+===========================================
+STUDENTS (5 accounts)
+===========================================
+
+1. Mathenge Melissa Mokeira
+   Email: mmokeira@kabarak.ac.ke
+   Reg Number: LAW/M/1043/05/26
+   Role: student
+   Password: KabusTest2026!
+
+2. Njuguna Luthuli Ndirangu
+   Email: njugunal@kabarak.ac.ke
+   Reg Number: LAW/M/1371/05/26
+   Role: student
+   Password: KabusTest2026!
+
+3. Blessing Sirtuy
+   Email: chepchumbab@kabarak.ac.ke
+   Reg Number: LAW/M/1096/05/26
+   Role: student
+   Password: KabusTest2026!
+
+4. Ndung'u Terryann Njoki
+   Email: ndung'u@kabarak.ac.ke
+   Reg Number: LAW/M/1321/05/26
+   Role: student
+   Password: KabusTest2026!
+
+5. Toroitich Eli
+   Email: elikiprotich@kabarak.ac.ke
+   Reg Number: LAW/M/1448/05/26
+   Role: student
+   Password: KabusTest2026!
+
+===========================================
+ADMIN STAFF (3 accounts)
+===========================================
+
+6. Alma Zawadi - DEAN
+   Email: ikumilu@kabarak.ac.ke
+   Role: dean
+   Password: KabusTest2026!
+
+7. Lawrent Meja - ADMINISTRATOR
+   Email: lboli@kabarak.ac.ke
+   Role: administrator
+   Password: KabusTest2026!
+
+8. Ryan Richards - IT SUPPORT
+   Email: rwahome@kabarak.ac.ke
+   Role: it_support
+   Password: KabusTest2026!
+
+===========================================
+LECTURERS / STAFF (5 accounts)
+===========================================
+
+9. Terry Thangari
+   Email: tthangari@kabarak.ac.ke
+   Subject: Data science For lawyers
+   Availability: Monday (Day 1), Block 3 (2-5 PM)
+   Role: lecturer
+   Password: KabusTest2026!
+
+10. Cynthia Mercy
+    Email: cgitonga@kabarak.ac.ke
+    Subject: Bill Of Rights
+    Availability: Tuesday (Day 2), Block 1 (8-11 AM)
+    Role: lecturer
+    Password: KabusTest2026!
+
+11. Phyllis Ojode
+    Email: pojode@kabarak.ac.ke
+    Subject: Criminal Law
+    Availability: Friday (Day 5), Block 3 (2-5 PM)
+    Role: lecturer
+    Password: KabusTest2026!
+
+12. Chepchirchir Tukai
+    Email: chepchirchirtukai@kabarak.ac.ke
+    Subject: Law and Society
+    Availability: Thursday (Day 4), Block 3 (2-5 PM)
+    Role: lecturer
+    Password: KabusTest2026!
+
+13. Koech Chebet Mitchelle
+    Email: koechc@kabarak.ac.ke
+    Subject: Legal systems and Methods
+    Availability: Wednesday (Day 3), Block 3 (2-5 PM)
+    Role: lecturer
+    Password: KabusTest2026!
+
+===========================================
+DELETED ACCOUNT
+===========================================
+
+Nkarichia (LAW/M/1178/05/26) - nkarichia@kabarak.ac.ke
+Status: DELETED as per PDF requirements
+
+===========================================
+LOGIN INSTRUCTIONS
+===========================================
+
+1. Go to the application URL
+2. Click "Sign In"
+3. Use the email and password above
+4. Students can also login with Registration Number format: LAW/M/XXXX/XX/XX
+5. On first login, users should change their password via "Forgot Password" or profile settings
+
+===========================================
+TIME BLOCKS REFERENCE
+===========================================
+
+Block 1: 8:00 AM - 11:00 AM
+Block 2: 11:00 AM - 2:00 PM (Chapel on Wednesdays)
+Block 3: 2:00 PM - 5:00 PM
+
+===========================================
+DAYS OF WEEK
+===========================================
+
+1 = Monday
+2 = Tuesday
+3 = Wednesday
+4 = Thursday
+5 = Friday
