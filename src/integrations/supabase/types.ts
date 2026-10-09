@@ -507,6 +507,15 @@ export type Database = {
         Args: { _identifier: string; _scope: string; _succeeded: boolean }
         Returns: undefined
       }
+      record_auth_failure: {
+        Args: {
+          _identifier: string
+          _max_failures: number
+          _scope: string
+          _window_minutes: number
+        }
+        Returns: undefined
+      }
       write_log: {
         Args: {
           _action: string

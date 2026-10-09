@@ -82,19 +82,10 @@ export function regToEmail(reg: string) {
   return `${slug.toLowerCase()}@students.kabarak.ac.ke`;
 }
 
-const REG_TO_EMAIL: Record<string, string> = {
-  "LAW/M/1178/05/26": "njugunal@kabarak.ac.ke",
-  "LAW/M/1179/05/26": "chepchumbab@kabarak.ac.ke",
-  "LAW/M/1180/05/26": "ndung'u@kabarak.ac.ke",
-  "LAW/M/1181/05/26": "elikiprotich@kabarak.ac.ke",
-  "LAW/M/1182/05/26": "mmokeira@kabarak.ac.ke",
-};
-
 export function identifierToEmail(identifier: string) {
   const value = identifier.trim();
   if (value.includes("@")) return value.toLowerCase();
-  const upper = value.toUpperCase();
-  return REG_TO_EMAIL[upper] ?? regToEmail(value);
+  return regToEmail(value);
 }
 
 export const GENERIC_AUTH_ERROR =

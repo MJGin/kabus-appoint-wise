@@ -1,6 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-const STUDENT = { reg: "LAW/M/1001/2024/25", password: "KabusTest2026!" };
+// Credentials come from the environment so no password is committed to the repository.
+const STUDENT = {
+  reg: process.env["E2E_STUDENT_REG"] ?? "",
+  password: process.env["E2E_STUDENT_PASSWORD"] ?? "",
+};
+
+test.skip(
+  !STUDENT.reg || !STUDENT.password,
+  "Set E2E_STUDENT_REG and E2E_STUDENT_PASSWORD to run the walkthrough.",
+);
 
 const shot = (page: import("@playwright/test").Page, name: string) =>
   page.screenshot({ path: `e2e/screenshots/${name}.png`, fullPage: true });

@@ -1,9 +1,17 @@
 import { expect, test } from "@playwright/test";
 
+// Credentials come from the environment so no password is committed to the repository.
+// Run with a real, dedicated test student, e.g.
+//   E2E_STUDENT_REG="LAW/M/1178/05/26" E2E_STUDENT_PASSWORD="..." npm run test:e2e
 const STUDENT = {
-  reg: "LAW/M/1001/2024/25",
-  password: "KabusTest2026!",
+  reg: process.env["E2E_STUDENT_REG"] ?? "",
+  password: process.env["E2E_STUDENT_PASSWORD"] ?? "",
 };
+
+test.skip(
+  !STUDENT.reg || !STUDENT.password,
+  "Set E2E_STUDENT_REG and E2E_STUDENT_PASSWORD to run the signed-in student tests.",
+);
 
 const shot = (page: import("@playwright/test").Page, name: string) =>
   page.screenshot({ path: `e2e/screenshots/${name}.png`, fullPage: true });
