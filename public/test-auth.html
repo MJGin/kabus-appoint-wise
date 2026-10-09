@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Auth + Firestore Test</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      createUserWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged,
+      updateProfile
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { 
+      getFirestore, 
+      doc, 
+      getDoc, 
+      onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCz3vAr-1B_n0nIVmG65axtyO0KFRYYRtA",
+      authDomain: "kabu-71867.firebaseapp.com",
+      projectId: "kabu-71867",
+      storageBucket: "kabu-71867.firebasestorage.app",
+      messagingSenderId: "867676594476",
+      appId: "1:867676594476:web:c9da65f7531a457a948c89",
+      measurementId: "G-NHYQRWNZ0S"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore();
+
+    const TEST_EMAIL = "test@kabarak.ac.ke";
+    const TEST_PASSWORD = "TestPass123!";
+    const TEST_NAME = "Test User";
+
+    const log = document.getElementById("log");
+    const status = document.getElementById("status");
+
+    function logMessage(message, type = "info") {
+      const div = document.createElement("div");
+      div.className = `log-entry ${type}`;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      log.prepend(div);
+      console.log(message);
+    }
+
+    function setStatus(message, type = "info") {
+      status.textContent = message;
+      status.className = `status ${type}`;
+    }
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore();
+
+    const TEST_EMAIL = "test@kabarak.ac.ke";
+    const TEST_PASSWORD = "TestPass123!";
+    const TEST_NAME = "Test User";
+
+    async function runTest() {
+      const results = [];
+      
+      function addResult(step, success, message, data = null) {
+        const result = { step, success, message, data };
+        console.log(`${success ? "✅" : "❌"} ${step}: ${message}`, data || "");
+        setStatus(`${success ? "✅" : "❌"} ${step}: ${message}`, success ? "success" : "error");
+        return { step, success, message, data };
+      }
+
+      try {
+        setStatus("Testing Firebase Auth + Firestore...", "info");
+        
+        // Check Firebase init
+        if (!auth.app.options.projectId) {
+          throw new Error("Firebase not initialized");
+        }
+        logMessage(`✅ Firebase initialized: ${auth.app.options.projectId}`);
+
+        // Step 1: Sign up / Sign in
+        setStatus("Testing Sign Up / Sign In...", "info");
+        let userCredential;
+        try {
+          const userCred = await createUserWithEmailAndPassword(auth, "test@kabarak.ac.ke", "TestPass123!");
+          await updateProfile(auth.currentUser!, { displayName: "Test User" });
+          logMessage(`✅ Sign Up: Created user ${userCred.user.uid}`);
+        } catch (e) {
+          if (e.code === "auth/email-already-in-use") {
+            const userCred = await signInWithEmailAndPassword(auth, "test@kabarak.ac.ke", "TestPass123!");
+            logMessage(`✅ Sign In (existing user): ${userCred.user.uid}`);
+          } else {
+            throw e;
+          }
+        }
+
+        // Wait for profile creation
+        logMessage("⏳ Waiting for Firestore profile creation...");
+        await new Promise(r => setTimeout(r, 3000));
+
+        // Step 2: Verify profile in Firestore
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const profile = userDoc.data();
+            addResult("Firestore Profile", true, "Profile created in Firestore", {
+              uid: user.uid,
+              email: profile.email,
+              fullName: profile.fullName,
+              role: profile.role,
+              firebaseUid: profile.firebaseUid,
+              isDemo: profile.isDemo,
+            });
+          } else {
+            addResult("Firestore Profile", false, "Profile NOT found in Firestore - Cloud Function trigger may not have fired");
+          }
+        }
+
+        // Test sign out
+        await signOut(auth);
+        addResult("Sign Out", true, "Signed out successfully");
+
+        // Test sign in again
+        await signInWithEmailAndPassword(auth, "test@kabarak.ac.ke", "TestPass123!");
+        addResult("Sign In (after sign out)", true, "Signed in successfully after sign out");
+
+        // Verify profile accessible after re-login
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            addResult("Profile After Re-login", true, "Profile accessible after re-login");
+          } else {
+            addResult("Profile After Re-login", false, "Profile not accessible after re-login");
+          }
+        }
+
+        await signOut(auth);
+        addResult("Final Sign Out", true, "Test completed, signed out");
+
+      } catch (error) {
+        console.error("Test failed:", error);
+        logMessage(`❌ Test failed: ${error.message}`, "error");
+        setStatus(`❌ Test failed: ${error.message}`, "error");
+      }
+    }
+
+    function logMessage(message, type = "info") {
+      const div = document.createElement("div");
+      div.className = `log-entry ${type}`;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      document.getElementById("log").prepend(div);
+    }
+
+    function addResult(step, success, message, data = null) {
+      const result = { step, success, message };
+      console.log(`${success ? "✅" : "❌"} ${step}: ${message}`);
+      setStatus(`${success ? "✅" : "❌"} ${step}: ${message}`, success ? "success" : "error");
+      return result;
+    }
+
+    function setStatus(message, type = "info") {
+      const statusEl = document.getElementById("status");
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+    }
+
+    // Run test on button click
+    document.getElementById("runTest").addEventListener("click", () => {
+      document.getElementById("log").innerHTML = "";
+      setStatus("Starting test...", "info");
+      runTest();
+    });
+
+    // Auto-run on load
+    // runTest();
+  </script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 1rem; }
+    .status { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: bold; }
+    .status.info { background: #e3f2fd; color: #1565c0; }
+    .status.success { background: #e8f5e9; color: #2e7d32; }
+    .status.error { background: #ffebee; color: #c62828; }
+    button { padding: 0.75rem 1.5rem; font-size: 1rem; cursor: pointer; background: #1976d2; color: white; border: none; border-radius: 4px; }
+    button:hover { background: #1565c0; }
+    #log { background: #f5f5f5; padding: 1rem; border-radius: 4px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.875rem; }
+    .log-entry { padding: 0.25rem 0; border-bottom: 1px solid #eee; }
+    .log-entry.error { color: #c62828; }
+    .log-entry.success { color: #2e7d32; }
+    .status-box { padding: 1rem; background: #f5f5f5; border-radius: 4px; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>🔥 Firebase Auth + Firestore Integration Test</h1>
+  <p>This page tests the complete Firebase Auth + Firestore integration for KABU SlotIn.</p>
+  
+  <button id="runTest">🧪 Run Auth Test</button>
+  
+  <div id="status" class="status info">Click "Run Test" to start</div>
+  
+  <div id="log"></div>
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      createUserWithEmailAndPassword,
+      signOut,
+      updateProfile
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { 
+      getFirestore, 
+      doc, 
+      getDoc 
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCz3vAr-1B_n0nIVmG65axtyO0KFRYYRtA",
+      authDomain: "kabu-71867.firebaseapp.com",
+      projectId: "kabu-71867",
+      storageBucket: "kabu-71867.firebasestorage.app",
+      messagingSenderId: "867676594476",
+      appId: "1:867676594476:web:c9da65f7531a457a948c89",
+      measurementId: "G-NHYQRWNZ0S"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore();
+
+    const TEST_EMAIL = "test@kabarak.ac.ke";
+    const TEST_PASSWORD = "TestPass123!";
+    const TEST_NAME = "Test User";
+
+    function logMessage(message, type = "info") {
+      const div = document.createElement("div");
+      div.className = `log-entry ${type}`;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      document.getElementById("log").prepend(div);
+      console.log(message);
+    }
+
+    function setStatus(message, type = "info") {
+      const el = document.getElementById("status");
+      el.textContent = message;
+      el.className = `status ${type}`;
+    }
+
+    function addResult(step, success, message) {
+      console.log(`${success ? "✅" : "❌"} ${step}: ${message}`);
+      setStatus(`${success ? "✅" : "❌"} ${step}: ${message}`, success ? "success" : "error");
+    }
+
+    async function runTest() {
+      document.getElementById("log").innerHTML = "";
+      setStatus("Starting test...", "info");
+      const results = [];
+
+      function addResult(step, success, message) {
+        const result = { step, success, message };
+        console.log(`${success ? "✅" : "❌"} ${step}: ${message}`);
+        setStatus(`${success ? "✅" : "❌"} ${step}: ${message}`, success ? "success" : "error");
+        return result;
+      }
+
+      try {
+        setStatus("Testing Firebase Auth + Firestore...", "info");
+        logMessage(`✅ Firebase initialized: ${auth.app.options.projectId}`);
+
+        // Step 1: Sign up / Sign in
+        setStatus("Testing Sign Up / Sign In...", "info");
+        let userCredential;
+        try {
+          const userCred = await createUserWithEmailAndPassword(auth, "test@kabarak.ac.ke", "TestPass123!");
+          await updateProfile(auth.currentUser!, { displayName: "Test User" });
+          addResult("Sign Up", true, `User created: ${userCred.user.uid}`);
+        } catch (e) {
+          if (e.code === "auth/email-already-in-use") {
+            const userCred = await signInWithEmailAndPassword(auth, "test@kabarak.ac.ke", "TestPass123!");
+            addResult("Sign In", true, `Signed in existing user: ${userCred.user.uid}`);
+          } else {
+            throw e;
+          }
+        }
+
+        // Wait for profile creation
+        logMessage("⏳ Waiting for Firestore profile creation...");
+        await new Promise(r => setTimeout(r, 3000));
+
+        // Verify profile in Firestore
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const profile = userDoc.data();
+            addResult("Firestore Profile", true, "Profile created in Firestore", {
+              uid: user.uid,
+              email: profile.email,
+              fullName: profile.fullName,
+              role: profile.role,
+              firebaseUid: profile.firebaseUid,
+              isDemo: profile.isDemo,
+            });
+          } else {
+            addResult("Firestore Profile", false, "Profile NOT found in Firestore - Cloud Function trigger may not have fired");
+          }
+        }
+
+        // Test sign out
+        await signOut(auth);
+        addResult("Sign Out", true, "Signed out successfully");
+
+        // Test sign in again
+        await signInWithEmailAndPassword(auth, "test@kabarak.ac.ke", "TestPass123!");
+        addResult("Sign In (after sign out)", true, "Signed in successfully after sign out");
+
+        // Verify profile accessible after re-login
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            addResult("Profile After Re-login", true, "Profile accessible after re-login");
+          } else {
+            addResult("Profile After Re-login", false, "Profile not accessible after re-login");
+          }
+        }
+
+        await signOut(auth);
+        addResult("Final Sign Out", true, "Test completed, signed out");
+
+      } catch (error) {
+        console.error("Test failed:", error);
+        logMessage(`❌ Test failed: ${error.message}`, "error");
+        setStatus(`❌ Test failed: ${error.message}`, "error");
+      }
+    }
+
+    function logMessage(message, type = "info") {
+      const div = document.createElement("div");
+      div.className = `log-entry ${type}`;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      document.getElementById("log").prepend(div);
+      console.log(message);
+    }
+
+    function setStatus(message, type = "info") {
+      const el = document.getElementById("status");
+      el.textContent = message;
+      el.className = `status ${type}`;
+    }
+
+    // Run test on button click
+    document.getElementById("runTest").addEventListener("click", () => {
+      document.getElementById("log").innerHTML = "";
+      setStatus("Starting test...", "info");
+      runTest();
+    });
+  </script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 1rem; }
+    .status { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: bold; }
+    .status.info { background: #e3f2fd; color: #1565c0; }
+    .status.success { background: #e8f5e9; color: #2e7d32; }
+    .status.error { background: #ffebee; color: #c62828; }
+    button { padding: 0.75rem 1.5rem; font-size: 1rem; cursor: pointer; background: #1976d2; color: white; border: none; border-radius: 4px; }
+    button:hover { background: #1565c0; }
+    #log { background: #f5f5f5; padding: 1rem; border-radius: 4px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.875rem; }
+    .log-entry { padding: 0.25rem 0; border-bottom: 1px solid #eee; }
+    .log-entry.error { color: #c62828; }
+    .log-entry.success { color: #2e7d32; }
+  </style>
+</head>
+<body>
+  <h1>🔥 Firebase Auth + Firestore Integration Test</h1>
+  <p>This page tests the complete Firebase Auth + Firestore integration for KABU SlotIn.</p>
+  
+  <button id="runTest">🧪 Run Auth Test</button>
+  
+  <div id="status" class="status info">Click "Run Test" to start</div>
+  
+  <div id="log"></div>
+</body>
+</html>
