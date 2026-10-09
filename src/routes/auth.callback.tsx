@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/auth/callback")({
@@ -11,16 +10,8 @@ function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function handleCallback() {
-      const { error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Auth callback error:", error);
-        navigate({ to: "/auth", search: { error: "auth_failed" } });
-        return;
-      }
-      navigate({ to: "/dashboard" });
-    }
-    void handleCallback();
+    // Demo mode: no OAuth, just redirect to dashboard
+    navigate({ to: "/dashboard" });
   }, [navigate]);
 
   return (

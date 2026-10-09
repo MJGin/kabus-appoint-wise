@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { Session, User } from "@supabase/supabase-js";
 
-import { supabase } from "@/integrations/supabase/client";
+import { getDemoSession, clearDemoSession, type DemoUser, type DemoSession } from "@/lib/demoAuth";
 
 export type AppRole = "student" | "lecturer" | "dean" | "administrator" | "it_support";
 
@@ -18,55 +17,62 @@ export type Profile = {
 };
 
 type AuthState = {
-  session: Session | null;
-  user: User | null;
+  session: DemoSession | null;
+  user: DemoUser | null;
   role: AppRole | null;
   profile: Profile | null;
   loading: boolean;
-  /** true once a second step has been completed (Administrator / IT Support) */
   elevated: boolean;
   refresh: () => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
 
+function demoUserToProfile(user: DemoUser): Profile {
+  return {
+    id: user.email,
+    full_name: user.fullName,
+    reg_number: user.regNumber ?? null,
+    email: user.email,
+    title: user.role === "lecturer" ? "Lecturer" : user.role === "dean" ? "Dean" : null,
+    department: "School of Law",
+    bio: null,
+    photo_url: null,
+    office_location: null,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<DemoSession | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [elevated, setElevated] = useState(false);
 
-  async function load(current: Session | null) {
-    if (!current) {
+  async function load() {
+    const demoSession = getDemoSession();
+    if (demoSession) {
+      setSession(demoSession);
+      setRole(demoSession.user.role);
+      setProfile(demoUserToProfile(demoSession.user));
+    } else {
+      setSession(null);
       setRole(null);
       setProfile(null);
-      setElevated(false);
-      setLoading(false);
-      return;
     }
-    const [roleRes, profileRes, aal] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", current.user.id).maybeSingle(),
-      supabase.from("profiles").select("*").eq("id", current.user.id).maybeSingle(),
-      supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
-    ]);
-    setRole((roleRes.data?.role as AppRole | undefined) ?? null);
-    setProfile((profileRes.data as Profile | null) ?? null);
-    setElevated(aal.data?.currentLevel === "aal2");
     setLoading(false);
   }
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
-      void load(next);
-    });
-    void supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      void load(data.session);
-    });
-    return () => sub.subscription.unsubscribe();
+    void load();
   }, []);
+
+  async function signOut() {
+    clearDemoSession();
+    setSession(null);
+    setRole(null);
+    setProfile(null);
+  }
 
   return (
     <AuthContext.Provider
@@ -76,8 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role,
         profile,
         loading,
-        elevated,
-        refresh: () => load(session),
+        elevated: false,
+        refresh: load,
+        signOut,
       }}
     >
       {children}
