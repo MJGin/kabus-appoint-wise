@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { GENERIC_AUTH_ERROR, identifierToEmail } from "@/lib/kabuslotin";
+import { GENERIC_AUTH_ERROR } from "@/lib/kabuslotin";
 
 // Limits. Per account is strict; per network address is looser because many students share
 // the campus connection.
@@ -27,9 +27,9 @@ export type SignInResult =
 /**
  * Turns what the user typed into the account's real email address.
  * A staff/student email passes through; a registration number is looked up in profiles so
- * seeded accounts (mmokeira@kabarak.ac.ke etc.) resolve correctly. The derived
- * students.kabarak.ac.ke address remains only as a fallback for accounts that signed up
- * through the form, which are created with exactly that address.
+ * seeded accounts (mmokeira@kabarak.ac.ke etc.) resolve correctly.
+ * The derived students.kabarak.ac.ke address is no longer auto-derived —
+ * if a reg number has no matching profile, the identifier is used as-is.
  */
 async function resolveSignInEmail(identifier: string): Promise<string> {
   const value = identifier.trim();
@@ -43,7 +43,8 @@ async function resolveSignInEmail(identifier: string): Promise<string> {
     .maybeSingle();
   if (!error && data?.email) return data.email.toLowerCase();
 
-  return identifierToEmail(value);
+  // No artificial domain derivation — return identifier as-is for sign-in.
+  return value;
 }
 
 /**

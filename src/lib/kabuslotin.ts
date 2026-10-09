@@ -85,7 +85,9 @@ export function regToEmail(reg: string) {
 export function identifierToEmail(identifier: string) {
   const value = identifier.trim();
   if (value.includes("@")) return value.toLowerCase();
-  return regToEmail(value);
+  // No longer deriving students.kabarak.ac.ke addresses;
+  // caller should resolve via profiles or use the identifier as-is.
+  return value;
 }
 
 export const GENERIC_AUTH_ERROR =
