@@ -1,90 +1,58 @@
-import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
-import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-const identifierSchema = z.object({ identifier: z.string().min(1).max(200) });
-const resultSchema = identifierSchema.extend({ succeeded: z.boolean() });
-const actionSchema = z.object({ action: z.enum(["booking", "reschedule"]) });
-
-async function hash(value: string) {
-  const bytes = new TextEncoder().encode(value.trim().toLowerCase());
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+function isNewSupabaseApiKey(value: string): boolean {
+  return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
 }
 
-function callerIp() {
-  const headers = getRequest().headers;
-  const raw =
-    headers.get("cf-connecting-ip") ??
-    headers.get("x-forwarded-for")?.split(",")[0] ??
-    headers.get("x-real-ip") ??
-    "unknown";
-  return raw.trim();
+function createSupabaseFetch(supabaseKey: string): typeof fetch {
+  return (input, init) => {
+    const headers = new Headers(
+      typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
+    );
+
+    if (init?.headers) {
+      new Headers(init.headers).forEach((value, key) => headers.set(key, value));
+    }
+
+    if (isNewSupabaseApiKey(supabaseKey) && headers.get("Authorization") === `Bearer ${supabaseKey}`) {
+      headers.delete("Authorization");
+    }
+
+    headers.set("apikey", supabaseKey);
+    return fetch(input, { ...init, headers });
+  };
 }
 
-/** Refuses further sign-in attempts once an account or network address is locked out. */
-export const checkSignInAllowed = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => identifierSchema.parse(data))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [account, network] = await Promise.all([
-      supabaseAdmin.rpc("check_auth_throttle", {
-        _scope: "signin:account",
-        _identifier: await hash(data.identifier),
-      }),
-      supabaseAdmin.rpc("check_auth_throttle", {
-        _scope: "signin:ip",
-        _identifier: await hash(callerIp()),
-      }),
-    ]);
-    return { allowed: account.data !== false && network.data !== false };
-  });
+function createSupabaseClient() {
+  if (!SUPABASE_URL) {
+    throw new Error("Missing VITE_SUPABASE_URL");
+  }
+  if (!SUPABASE_ANON_KEY) {
+    throw new Error("Missing VITE_SUPABASE_PUBLISHABLE_KEY");
+  }
 
-/** Records the outcome of a sign-in attempt so repeated failures lock the path. */
-export const recordSignInResult = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => resultSchema.parse(data))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await Promise.all([
-      supabaseAdmin.rpc("record_auth_attempt", {
-        _scope: "signin:account",
-        _identifier: await hash(data.identifier),
-        _succeeded: data.succeeded,
-      }),
-      supabaseAdmin.rpc("record_auth_attempt", {
-        _scope: "signin:ip",
-        _identifier: await hash(callerIp()),
-        _succeeded: data.succeeded,
-      }),
-    ]);
-    return { ok: true };
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { fetch: createSupabaseFetch(SUPABASE_ANON_KEY) },
   });
+}
 
-/** Applies both per-account and per-network limits before sensitive appointment changes. */
-export const consumeActionRateLimit = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => actionSchema.parse(data))
-  .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const maximum = data.action === "booking" ? 12 : 20;
-    const [account, network] = await Promise.all([
-      supabaseAdmin.rpc("consume_action_throttle", {
-        _scope: `${data.action}:account`,
-        _identifier: await hash(context.userId),
-        _maximum: maximum,
-        _window_minutes: 15,
-      }),
-      supabaseAdmin.rpc("consume_action_throttle", {
-        _scope: `${data.action}:ip`,
-        _identifier: await hash(callerIp()),
-        _maximum: maximum * 3,
-        _window_minutes: 15,
-      }),
-    ]);
-    if (account.error || network.error) throw new Error("Unable to verify the request limit.");
-    return { allowed: account.data === true && network.data === true };
-  });
+const supabase = createSupabaseClient();
+
+/**
+ * Simple rate limiting for actions (booking, cancelling, etc.)
+ * Returns true if allowed, false if rate limited
+ */
+export async function consumeActionRateLimit(action: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc("consume_action_rate_limit", {
+      p_action: action,
+    });
+    if (error) return false;
+    return data === true;
+  } catch {
+    return false;
+  }
+}

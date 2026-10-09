@@ -5,18 +5,31 @@ const STUDENT = {
   password: "KabusTest2026!",
 };
 
+const shot = (page: import("@playwright/test").Page, name: string) =>
+  page.screenshot({ path: `e2e/screenshots/${name}.png`, fullPage: true });
+
 async function signInStudent(page: import("@playwright/test").Page) {
   await page.goto("/auth");
+  await shot(page, "01-landing");
   await expect(page.getByRole("heading", { name: /welcome back/i })).toBeVisible();
   await page.getByLabel(/registration number or staff email/i).first().fill(STUDENT.reg);
   await page.getByLabel(/^password/i).first().fill(STUDENT.password);
+  await shot(page, "02-auth-filled");
   await page.getByRole("button", { name: /^sign in$/i }).first().click();
-  // Leave /auth once the session lands on dashboard (or shows an auth error).
   await page.waitForURL((url) => !url.pathname.endsWith("/auth"), { timeout: 15_000 }).catch(() => {
     /* stay put; caller asserts */
   });
   await page.waitForLoadState("domcontentloaded");
+  await shot(page, "03-post-signin");
 }
+
+test("student can sign in with LAW/ registration number", async ({ page }) => {
+  await signInStudent(page);
+  await expect(page).not.toHaveURL(/\/auth$/);
+  // Dashboard or landing post-auth
+  const body = await page.locator("body").innerText();
+  expect(body.length).toBeGreaterThan(50);
+});
 
 test.describe("Student authentication", () => {
   test("student can sign in with LAW/ registration number", async ({ page }) => {
