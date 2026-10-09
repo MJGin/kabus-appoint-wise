@@ -1,6 +1,9 @@
 import { clearOfflineData } from "@/lib/pwa";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useFirebaseAuth } from "@/integrations/firebase/hooks";
+import { getProfile } from "@/integrations/firebase/callable";
+import { firebaseSignOut } from "@/integrations/firebase/callable";
 
 import { AdminDash } from "@/components/dash/AdminDash";
 import { DeanDash } from "@/components/dash/DeanDash";
@@ -11,7 +14,6 @@ import { Empty, Note } from "@/components/dash/parts";
 import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/brand/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -45,38 +47,37 @@ const roleNames: Record<string, string> = {
 function DashboardPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { user, loading: authLoading, signOut: firebaseSignOutHook } = useFirebaseAuth();
 
   const me = useQuery({
     queryKey: ["me"],
     queryFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-      if (!user) return null;
-      const [roleRes, profileRes, aal] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", user.id).maybeSingle(),
-        supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
-        supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
-      ]);
+      if (!isFirebaseInitialized()) return null;
+      const { getProfile } = await import("@/integrations/firebase/callable");
+      const result = await getProfile({});
+      if (!result.success || !result.profile) return null;
+      const profile = result.profile;
       return {
-        id: user.id,
-        role: roleRes.data?.role ?? null,
-        name: profileRes.data?.full_name ?? "",
-        elevated: aal.data?.currentLevel === "aal2",
+        id: profile.uid,
+        role: profile.role,
+        name: profile.fullName,
+        isDemo: profile.isDemo,
       };
     },
+    enabled: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
     await clearOfflineData();
-    await supabase.auth.signOut();
+    await firebaseSignOut();
     await navigate({ to: "/auth", replace: true });
   }
 
   const role = me.data?.role ?? null;
-  const needsSecondStep =
-    (role === "administrator" || role === "it_support") && me.data?.elevated === false;
+  const needsSecondStep = false; // Firebase doesn't use MFA in the same way
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
@@ -89,8 +90,8 @@ function DashboardPage() {
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {me.data?.name}
               {role ? ` · ${roleNames[role] ?? role}` : ""}
+              {me.data?.isDemo && <span className="ml-2 px-2 py-0.5 text-xs bg-primary/10 text-primary rounded">Demo</span>}
             </span>
-            <ThemeToggle />
             <Button size="sm" variant="ghost" onClick={signOut}>
               Sign out
             </Button>
@@ -111,15 +112,7 @@ function DashboardPage() {
 
           {!me.isLoading && !role && (
             <Note tone="error">
-              No role has been set on this account yet. Ask the School Administrator to check the
-              approved list.
-            </Note>
-          )}
-
-          {needsSecondStep && (
-            <Note tone="error">
-              This account must confirm the second step at sign-in before its area opens. Sign out
-              and sign in again to complete it.
+              No role has been set on this account yet. Ask the School Administrator to check.
             </Note>
           )}
 

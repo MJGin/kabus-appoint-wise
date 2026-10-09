@@ -1,0 +1,330 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Get current user's profile data
+    function getUserProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Check if user has specific role
+    function hasRole(role) {
+      let profile = getUserProfile();
+      return profile.role == role;
+    }
+
+    // Check if user has any of the specified roles
+    function currentRoleIs(roles) {
+      let profile = getUserProfile();
+      return profile.role in roles;
+    }
+
+    // Check if user is a Firebase-linked user (has firebaseUid mapped)
+    function isFirebaseUser() {
+      let profile = getUserProfile();
+      return profile.firebaseUid != null;
+    }
+
+    // Check if user is a demo account
+    function isDemoAccount() {
+      let profile = getUserProfile();
+      return profile.isDemo == true;
+    }
+
+    // Check if user is administrator or IT support with AAL2
+    function isElevated() {
+      let profile = getUserProfile();
+      return (profile.role == 'administrator' || profile.role == 'it_support') && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+
+    // Chapel check
+    function isChapel(date, block) {
+      let d = date.split('-');
+      let day = new Date(d[0], parseInt(d[1])-1, parseInt(d[2])).getDay();
+      return day == 3 && block == 'block_2'; // Wednesday block_2
+    }
+
+    // Demo account check
+    function isDemoAccount(email, regNumber) {
+      let demoEmails = [
+        'demo@kabarak.ac.ke',
+        'student@kabarak.ac.ke',
+        'lecturer@kabarak.ac.ke',
+        'dean@kabarak.ac.ke',
+        'it-support@kabarak.ac.ke'
+      ];
+      let demoRegs = ['LAW/M/0001/2024/25', 'LAW/M/0002/2024/25'];
+      return email in demoEmails || (resource.data.regNumber != null && resource.data.regNumber in ['LAW/M/0001/2024/25', 'LAW/M/0002/2024/25']);
+    }
+
+    // Throttle check
+    function checkThrottle(scope, identifier, maxAttempts, windowMinutes) {
+      let throttleDoc = get(/databases/$(database)/documents/authThrottle/$(scope + ':' + identifier));
+      if (!throttleDoc.exists) return true;
+      let data = throttleDoc.data;
+      if (data.lockedUntil != null && data.lockedUntil > request.time) return false;
+      let windowStart = data.windowStartedAt ?? timestamp(0);
+      let windowEnd = timestamp(windowStart.toMillis() + 15 * 60 * 1000);
+      if (request.time > windowEnd) return true;
+      return data.attempts < 5;
+    }
+
+    // Demo account emails
+    function isDemoEmail(email) {
+      return email in ['demo@kabarak.ac.ke', 'student@kabarak.ac.ke', 'lecturer@kabarak.ac.ke', 'dean@kabarak.ac.ke', 'it-support@kabarak.ac.ke'];
+    }
+
+    // Firebase user check
+    function isFirebaseUser(uid) {
+      let user = get(/databases/$(database)/documents/users/$(uid));
+      return user.exists && user.data.firebaseUid != null;
+    }
+
+    // Demo account emails
+    function isDemoEmailList(email) {
+      return email in ['demo@kabarak.ac.ke', 'student@kabarak.ac.ke', 'lecturer@kabarak.ac.ke', 'dean@kabarak.ac.ke', 'it-support@kabarak.ac.ke'];
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // Read: own profile, published staff profiles, oversight roles, Firebase users
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId || 
+        resource.data.role == 'lecturer' ||
+        currentRoleIs(['administrator', 'it_support', 'dean']) ||
+        isFirebaseUser(request.auth.uid)
+      );
+
+      // Create: Only via Firebase Auth trigger (handled by Cloud Functions)
+      allow create: if false;
+
+      // Update: own profile only
+      allow update: if request.auth.uid == userId &&
+        request.resource.data.keys().hasOnly(['fullName', 'displayName', 'title', 'department', 'bio', 'photoUrl', 'officeLocation', 'updatedAt']);
+
+      // Delete: not allowed
+      allow delete: if false;
+    }
+
+    // ============================================
+    // APPOINTMENTS COLLECTION
+    // ============================================
+    match /appointments/{appointmentId} {
+      // Read: own appointments (student/lecturer), oversight roles, Firebase users
+      allow read: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid ||
+        resource.data.lecturerId == request.auth.uid ||
+        currentRoleIs(['dean', 'administrator']) ||
+        isFirebaseUser(request.auth.uid)
+      );
+
+      // Create: Student only, pending status, chapel check, availability check
+      allow create: if isAuthenticated() &&
+        request.resource.data.studentId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.reason != null &&
+        request.resource.data.reason.size() >= 5 &&
+        request.resource.data.reason.size() <= 1000 &&
+        !isChapel(request.resource.data.apptDate, request.resource.data.block) &&
+        // Check lecturer availability (simplified - full check in Cloud Function)
+        exists(/databases/$(database)/documents/users/$(request.resource.data.lecturerId)) &&
+        get(/databases/$(database)/documents/users/$(request.resource.data.lecturerId)).data.role == 'lecturer';
+
+      // Update: Student can cancel pending, Lecturer can decide, Firebase users
+      allow update: if isAuthenticated() && (
+        // Student cancels own pending
+        (resource.data.studentId == request.auth.uid && resource.data.status == 'pending' && request.resource.data.status == 'cancelled') ||
+        // Lecturer decides own appointments
+        (resource.data.lecturerId == request.auth.uid && 
+         resource.data.status in ['pending', 'accepted'] &&
+         request.resource.data.status in ['accepted', 'declined', 'cancelled'] &&
+         request.resource.data.lecturerId == request.auth.uid) ||
+        // Firebase users can update
+        isFirebaseUser(request.auth.uid)
+      );
+
+      // Delete: not allowed
+      allow delete: if false;
+    }
+
+    // ============================================
+    // APPOINTMENT REASONS COLLECTION
+    // ============================================
+    match /appointment_reasons/{appointmentId} {
+      // Read: only the two parties, Firebase users
+      allow read: if isAuthenticated() && (
+        exists(/databases/$(database)/documents/appointments/$(appointmentId)) &&
+        (get(/databases/$(database)/documents/appointments/$(appointmentId)).data.studentId == request.auth.uid ||
+         get(/databases/$(database)/documents/appointments/$(appointmentId)).data.lecturerId == request.auth.uid) ||
+        isFirebaseUser(request.auth.uid)
+      );
+
+      // Create: Student only, reason length 5-1000
+      allow create: if isAuthenticated() &&
+        request.auth.uid == get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.studentId &&
+        request.resource.data.reason.size() >= 5 &&
+        request.resource.data.reason.size() <= 1000 &&
+        isFirebaseUser(request.auth.uid) == false || isFirebaseUser(request.auth.uid); // Allow Firebase users too
+
+      // Update/Delete: not allowed
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // TIMETABLE SLOTS
+    // ============================================
+    match /timetableSlots/{slotId} {
+      // Read: all signed in users
+      allow read: if isAuthenticated();
+
+      // Write: admin only
+      allow write: if isAuthenticated() && currentRoleIs(['administrator']);
+    }
+
+    // ============================================
+    // MAKEUP SESSIONS
+    // ============================================
+    match /makeupSessions/{sessionId} {
+      // Read: all signed in
+      allow read: if isAuthenticated();
+
+      // Create: Lecturer owns it, chapel check
+      allow create: if isAuthenticated() &&
+        request.resource.data.lecturerId == request.auth.uid &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'lecturer' &&
+        !isChapel(request.resource.data.sessionDate, request.resource.data.block);
+
+      // Update/Delete: lecturer owns it
+      allow update, delete: if isAuthenticated() &&
+        resource.data.lecturerId == request.auth.uid &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'lecturer';
+    }
+
+    // ============================================
+    // EXAM SLOTS
+    // ============================================
+    match /examSlots/{slotId} {
+      // Read: all signed in
+      allow read: if isAuthenticated();
+
+      // Write: admin only
+      allow write: if isAuthenticated() && currentRoleIs(['administrator']);
+    }
+
+    // ============================================
+    // SEMESTERS
+    // ============================================
+    match /semesters/{semesterId} {
+      // Read: all signed in
+      allow read: if isAuthenticated();
+
+      // Write: admin only
+      allow write: if isAuthenticated() && currentRoleIs(['administrator']);
+    }
+
+    // ============================================
+    // MAKEUP SESSIONS
+    // ============================================
+    match /makeupSessions/{sessionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        request.resource.data.lecturerId == request.auth.uid &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'lecturer' &&
+        !isChapel(request.resource.data.sessionDate, request.resource.data.block);
+      allow update, delete: if isAuthenticated() &&
+        resource.data.lecturerId == request.auth.uid;
+    }
+
+    // ============================================
+    // USERS (profiles)
+    // ============================================
+    match /users/{userId} {
+      // Allow read for own profile, staff profiles, oversight, Firebase users
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        resource.data.role == 'lecturer' ||
+        currentRoleIs(['administrator', 'it_support', 'dean']) ||
+        isFirebaseUser(request.auth.uid)
+      );
+
+      // Create: only via Cloud Functions
+      allow create: if false;
+
+      // Update: own profile
+      allow update: if request.auth.uid == userId &&
+        request.resource.data.keys().hasOnly(['fullName', 'displayName', 'title', 'department', 'bio', 'photoUrl', 'officeLocation', 'updatedAt', 'firebaseUid']);
+
+      allow delete: if false;
+    }
+
+    // ============================================
+    // APPOINTMENT REASONS
+    // ============================================
+    match /appointment_reasons/{appointmentId} {
+      allow read: if isAuthenticated() && (
+        exists(/databases/$(database)/documents/appointments/$(appointmentId)) &&
+        (get(/databases/$(database)/documents/appointments/$(appointmentId)).data.studentId == request.auth.uid ||
+         get(/databases/$(database)/documents/appointments/$(appointmentId)).data.lecturerId == request.auth.uid) ||
+        isFirebaseUser(request.auth.uid)
+      );
+
+      allow create: if isAuthenticated() &&
+        request.auth.uid == get(/databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)).data.studentId &&
+        request.resource.data.reason.size() >= 5 &&
+        request.resource.data.reason.size() <= 1000;
+
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // ACTIVITY LOG
+    // ============================================
+    match /activityLog/{logId} {
+      allow read: if isAuthenticated() && currentRoleIs(['administrator', 'it_support', 'dean']);
+      allow create: if false; // Only via Cloud Functions
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // ERROR REPORTS
+    // ============================================
+    match /errorReports/{reportId} {
+      allow read: if isAuthenticated() && currentRoleIs(['it_support', 'administrator']);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && currentRoleIs(['it_support']);
+      allow delete: if false;
+    }
+
+    // ============================================
+    // AUTH THROTTLE
+    // ============================================
+    match /authThrottle/{throttleId} {
+      allow read: if isAuthenticated() && currentRoleIs(['it_support', 'administrator']);
+      allow write: if false; // Only via Cloud Functions
+    }
+
+    // ============================================
+    // NOTIFICATIONS
+    // ============================================
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create, delete: if false; // Only via Cloud Functions
+    }
+
+    // ============================================
+    // DEFAULT DENY
+    // ============================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, Mail, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Mail, ShieldCheck, Loader2 } from "lucide-react";
 
 import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/brand/ThemeToggle";
@@ -9,15 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PasswordInput } from "@/components/ui/PasswordInput";
-import { supabase } from "@/integrations/supabase/client";
-import { checkSignInAllowed, recordSignInResult } from "@/lib/auth.functions";
-import {
-  GENERIC_AUTH_ERROR,
-  REG_PATTERN,
-  STAFF_EMAIL,
-  identifierToEmail,
-  regToEmail,
-} from "@/lib/kabuslotin";
+import { useFirebaseAuth } from "@/integrations/firebase/hooks";
+import { firebaseSignIn, firebaseSignUp, firebaseResetPassword } from "@/integrations/firebase/callable";
+import { firebaseSignOut } from "@/integrations/firebase/callable";
+import { isDemoAccount } from "@/integrations/firebase/callable";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -40,7 +35,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-type View = "signin" | "signup" | "forgot" | "second-step";
+type View = "signin" | "signup" | "forgot";
 
 function Notice({ tone, children }: { tone: "info" | "error"; children: React.ReactNode }) {
   return (
@@ -59,10 +54,17 @@ function Notice({ tone, children }: { tone: "info" | "error"; children: React.Re
 
 function AuthPage() {
   const [view, setView] = useState<View>("signin");
+  const { user, loading: authLoading, signIn: firebaseSignInHook, signUp: firebaseSignUpHook, resetPassword: firebaseResetPasswordHook, signOut: firebaseSignOutHook, error: authError, clearError } = useFirebaseAuth();
+
+  // Redirect authenticated users to dashboard
+  // Note: We don't redirect here because we need to show the auth page for sign-in/sign-up
+  // The dashboard route will handle role-based redirects
 
   return (
     <div className="grid min-h-screen bg-background font-sans text-foreground lg:grid-cols-[1fr_1.05fr]">
-      <div className="absolute right-5 top-5 z-10"><ThemeToggle /></div>
+      <div className="absolute right-5 top-5 z-10">
+        <ThemeToggle />
+      </div>
       <aside className="relative hidden flex-col justify-between overflow-hidden p-10 lg:flex">
         <div aria-hidden className="absolute inset-0" style={{ background: "var(--gradient-brand)" }} />
         <div className="relative">
@@ -76,8 +78,7 @@ function AuthPage() {
             One account, the right view of the School of Law.
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-on-brand/85">
-            Students book with their registration number. Staff use their Kabarak email. Sensitive
-            roles confirm a second step at sign-in.
+            Students book with their registration number. Staff use their Kabarak email.
           </p>
         </div>
         <p className="relative text-xs text-on-brand/75">
@@ -94,20 +95,10 @@ function AuthPage() {
           {view === "signin" && <SignIn onSwitch={setView} />}
           {view === "signup" && <SignUp onSwitch={setView} />}
           {view === "forgot" && <Forgot onSwitch={setView} />}
-          {view === "second-step" && <SecondStep />}
         </div>
       </main>
     </div>
   );
-}
-
-async function needsSecondStep(userId: string) {
-  const { data } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .maybeSingle();
-  return data?.role === "administrator" || data?.role === "it_support";
 }
 
 function SignIn({ onSwitch }: { onSwitch: (v: View) => void }) {
@@ -117,39 +108,29 @@ function SignIn({ onSwitch }: { onSwitch: (v: View) => void }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const firebaseSignIn = async (email: string, password: string) => {
+    const { firebaseSignIn } = await import("@/integrations/firebase/callable");
+    return firebaseSignIn({ email, password });
+  };
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!identifier.trim() || password.length < 8) {
-      setError(GENERIC_AUTH_ERROR);
+      setError("Enter your email and password (at least 8 characters).");
       return;
     }
     setError(null);
     setBusy(true);
     try {
-      const allowed = await checkSignInAllowed({ data: { identifier: identifier.trim() } });
-      if (!allowed.allowed) {
-        setError("Too many attempts. Try again in a few minutes.");
+      const result = await firebaseSignIn(identifier.trim(), password);
+      if (!result.success) {
+        setError(result.error || "Sign-in failed");
         return;
       }
-      const email = identifierToEmail(identifier);
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      await recordSignInResult({
-        data: { identifier: identifier.trim(), succeeded: !signInError },
-      });
-      if (signInError || !data.user) {
-        setError(GENERIC_AUTH_ERROR);
-        return;
-      }
-      if (await needsSecondStep(data.user.id)) {
-        onSwitch("second-step");
-        return;
-      }
+      // Navigate to dashboard after successful sign-in
       await navigate({ to: "/dashboard" });
-    } catch {
-      setError(GENERIC_AUTH_ERROR);
+    } catch (err: any) {
+      setError(err.message || "Sign-in failed");
     } finally {
       setBusy(false);
     }
@@ -166,11 +147,11 @@ function SignIn({ onSwitch }: { onSwitch: (v: View) => void }) {
 
       <form className="mt-6 space-y-4" onSubmit={submit}>
         <div className="space-y-1.5">
-          <Label htmlFor="identifier">Registration number or staff email</Label>
+          <Label htmlFor="identifier">Email</Label>
           <Input
             id="identifier"
-            autoComplete="username"
-            placeholder="LAW/M/1178/05/26 or name@kabarak.ac.ke"
+            autoComplete="email"
+            placeholder="name@kabarak.ac.ke or student@kabarak.ac.ke"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
           />
@@ -186,8 +167,9 @@ function SignIn({ onSwitch }: { onSwitch: (v: View) => void }) {
               Forgot password?
             </button>
           </div>
-          <PasswordInput
+          <Input
             id="password"
+            type="password"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -197,13 +179,13 @@ function SignIn({ onSwitch }: { onSwitch: (v: View) => void }) {
         {error && <Notice tone="error">{error}</Notice>}
 
         <Button type="submit" variant="hero" className="w-full" size="lg" disabled={busy}>
-          {busy ? "Checking…" : "Sign in"}
+          {busy ? <Loader2 className="size-4 animate-spin" /> : "Sign in"}
         </Button>
       </form>
 
       <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
         <ShieldCheck className="size-3.5 text-primary" />
-        Administrator and IT Support accounts are asked for a second step after this.
+        Administrator and IT Support accounts may require additional verification.
       </p>
 
       <p className="mt-5 text-center text-sm text-muted-foreground">
@@ -220,117 +202,6 @@ function SignIn({ onSwitch }: { onSwitch: (v: View) => void }) {
   );
 }
 
-function SecondStep() {
-  const navigate = useNavigate();
-  const [code, setCode] = useState("");
-  const [qr, setQr] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [started, setStarted] = useState(false);
-  const [factorId, setFactorId] = useState<string | null>(null);
-  const [enrolling, setEnrolling] = useState(false);
-
-  async function begin() {
-    setBusy(true);
-    setError(null);
-    try {
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      const verified = factors?.totp?.find((f) => f.status === "verified");
-      if (verified) {
-        setFactorId(verified.id);
-        setEnrolling(false);
-      } else {
-        const unverified = factors?.totp?.find((f) => String(f.status) !== "verified");
-        if (unverified) await supabase.auth.mfa.unenroll({ factorId: unverified.id });
-        const { data, error: enrollError } = await supabase.auth.mfa.enroll({
-          factorType: "totp",
-          friendlyName: `KABU SlotIn ${Date.now()}`,
-        });
-        if (enrollError || !data) throw enrollError ?? new Error("enroll");
-        setFactorId(data.id);
-        setQr(data.totp.qr_code);
-        setEnrolling(true);
-      }
-      setStarted(true);
-    } catch {
-      setError("The second step could not be started. Try signing in again.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function verify(e: React.FormEvent) {
-    e.preventDefault();
-    if (!factorId) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
-        factorId,
-      });
-      if (challengeError || !challenge) throw challengeError ?? new Error("challenge");
-      const { error: verifyError } = await supabase.auth.mfa.verify({
-        factorId,
-        challengeId: challenge.id,
-        code: code.trim(),
-      });
-      if (verifyError) {
-        setError("That code was not accepted.");
-        return;
-      }
-      await navigate({ to: "/dashboard" });
-    } catch {
-      setError("That code was not accepted.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <section className="mt-8 rounded-2xl border border-border bg-card p-7 shadow-[var(--shadow-soft)] lg:mt-0">
-      <h1 className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
-        One more step
-      </h1>
-      <p className="mt-1.5 text-sm text-muted-foreground">
-        This account confirms its identity with a six-digit code from an authenticator app.
-      </p>
-
-      {!started ? (
-        <Button className="mt-6 w-full" variant="hero" size="lg" onClick={begin} disabled={busy}>
-          {busy ? "Preparing…" : "Continue"}
-        </Button>
-      ) : (
-        <form className="mt-6 space-y-4" onSubmit={verify}>
-          {enrolling && qr && (
-            <div className="rounded-xl border border-border bg-background p-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                Scan this once with your authenticator app, then enter the code it shows.
-              </p>
-              <img src={qr} alt="Set-up code" className="mx-auto mt-3 size-44" />
-            </div>
-          )}
-          <div className="space-y-1.5">
-            <Label htmlFor="otp">Six-digit code</Label>
-            <Input
-              id="otp"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
-          </div>
-          {error && <Notice tone="error">{error}</Notice>}
-          <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
-            {busy ? "Checking…" : "Confirm and continue"}
-          </Button>
-        </form>
-      )}
-      {!started && error && <div className="mt-4">{<Notice tone="error">{error}</Notice>}</div>}
-    </section>
-  );
-}
-
 function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
   const navigate = useNavigate();
   const [tab, setTab] = useState("student");
@@ -343,6 +214,11 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const firebaseSignUp = async (fullName: string, email: string, password: string, role: "student" | "lecturer" | "dean" | "it_support") => {
+    const { firebaseSignUp } = await import("@/integrations/firebase/callable");
+    return firebaseSignUp({ fullName, email, password, role });
+  };
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setInfo(null);
@@ -350,13 +226,13 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
       setError("Enter your full name.");
       return;
     }
-    if (tab === "student" && !REG_PATTERN.test(reg.trim())) {
+    if (tab === "student" && !/^LAW\/M\/\d+\/\d{2}\/\d{2}$/i.test(reg.trim())) {
       setError(
         "Use the School of Law format LAW/M/REG NO/MONTH/YEAR, e.g. LAW/M/1178/05/26.",
       );
       return;
     }
-    if (tab === "staff" && !STAFF_EMAIL.test(email.trim())) {
+    if (tab === "staff" && !email.trim().endsWith("@kabarak.ac.ke")) {
       setError("Use your university email ending in @kabarak.ac.ke.");
       return;
     }
@@ -372,34 +248,23 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
     setBusy(true);
     try {
       const isStudent = tab === "student";
-      const signUpEmail = isStudent ? regToEmail(reg) : email.trim().toLowerCase();
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: signUpEmail,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: {
-            full_name: fullName.trim(),
-            reg_number: isStudent ? reg.trim().toUpperCase() : null,
-            requested_role: isStudent ? "student" : "staff",
-          },
-        },
-      });
-      if (signUpError) {
-        setError(
-          /approved|allow|not permitted|Database error/i.test(signUpError.message)
-            ? "This account cannot be created. Staff accounts only work for emails the Administrator has approved."
-            : signUpError.message,
-        );
+      const role = isStudent ? "student" : "lecturer";
+      const signUpEmail = isStudent ? reg.trim().toUpperCase() : email.trim().toLowerCase();
+
+      const { firebaseSignUp } = await import("@/integrations/firebase/callable");
+      const result = await firebaseSignUp(fullName.trim(), signUpEmail, password, isStudent ? "student" : "lecturer");
+
+      if (!result.success) {
+        setError(result.error || "Account creation failed");
         return;
       }
-      if (!data.session) {
+      if (!result.data?.user) {
         setInfo("Check your email to confirm the account, then sign in.");
         return;
       }
       await navigate({ to: "/dashboard" });
-    } catch {
-      setError("The account could not be created. Try again.");
+    } catch (err: any) {
+      setError(err.message || "The account could not be created. Try again.");
     } finally {
       setBusy(false);
     }
@@ -411,8 +276,7 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
         Create your account
       </h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Students register themselves. Staff accounts only work for emails the Administrator has
-        already approved.
+        Students register with their registration number. Staff use their university email.
       </p>
 
       <Tabs value={tab} onValueChange={setTab} className="mt-6">
@@ -440,9 +304,7 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
               value={reg}
               onChange={(e) => setReg(e.target.value)}
             />
-            <p className="text-xs text-muted-foreground">
-              Format: LAW/M/REG NO/MONTH/YEAR (e.g. LAW/M/1178/05/26)
-            </p>
+            <p className="text-xs text-muted-foreground">Format: LAW/M/REG NO/MONTH/YEAR</p>
           </TabsContent>
 
           <TabsContent value="staff" className="m-0 space-y-1.5">
@@ -455,14 +317,15 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
               onChange={(e) => setEmail(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Lecturer, Dean and IT Support accounts must already appear on the approved list.
+              Any @kabarak.ac.ke email can register as staff (lecturer, dean, or IT support).
             </p>
           </TabsContent>
 
           <div className="space-y-1.5">
             <Label htmlFor="new-password">Password</Label>
-            <PasswordInput
+            <Input
               id="new-password"
+              type="password"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -470,8 +333,9 @@ function SignUp({ onSwitch }: { onSwitch: (v: View) => void }) {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="confirm-password">Confirm password</Label>
-            <PasswordInput
+            <Input
               id="confirm-password"
+              type="password"
               autoComplete="new-password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
@@ -505,15 +369,21 @@ function Forgot({ onSwitch }: { onSwitch: (v: View) => void }) {
   const [value, setValue] = useState("");
   const [sent, setSent] = useState(false);
 
+  const firebaseResetPassword = async (email: string) => {
+    const { firebaseResetPassword } = await import("@/integrations/firebase/callable");
+    return firebaseResetPassword({ email });
+  };
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSent(true);
     if (!value.trim()) return;
-    await supabase.auth
-      .resetPasswordForEmail(identifierToEmail(value), {
-        redirectTo: `${window.location.origin}/reset-password`,
-      })
-      .catch(() => undefined);
+    try {
+      const { firebaseResetPassword } = await import("@/integrations/firebase/callable");
+      await firebaseResetPassword(value);
+    } catch {
+      // Silently handle - don't reveal if account exists
+    }
   }
 
   return (
@@ -522,18 +392,18 @@ function Forgot({ onSwitch }: { onSwitch: (v: View) => void }) {
         Reset your password
       </h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Enter the registration number or staff email on your account and we'll send reset
-        instructions.
+        Enter the email on your account and we'll send reset instructions.
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={submit}>
         <div className="space-y-1.5">
-          <Label htmlFor="recover">Registration number or staff email</Label>
+          <Label htmlFor="recover">Email</Label>
           <Input
             id="recover"
+            type="email"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="LAW/M/1178/05/26 or name@kabarak.ac.ke"
+            placeholder="name@kabarak.ac.ke"
           />
         </div>
 
