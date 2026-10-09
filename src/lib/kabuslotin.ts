@@ -65,29 +65,12 @@ export function nextWeekdays(count: number, from = new Date()) {
   return out;
 }
 
-/**
- * School of Law registration numbers look like:
- *   LAW/M/REG NO/MONTH/YEAR
- * e.g. LAW/M/1178/05/26 — admitted May (05) 2026 (26).
- */
-export const REG_PATTERN = /^LAW\/M\/\d{1,6}\/(0[1-9]|1[0-2])\/\d{2}$/i;
-export const STAFF_EMAIL = /@kabarak\.ac\.ke$/i;
-
-/**
- * Students sign in with their registration number. It is mapped to a stable
- * internal address so the same number always resolves to the same account.
- */
-export function regToEmail(reg: string) {
-  const slug = reg.trim().toUpperCase().replace(/[^A-Z0-9]+/g, ".").replace(/^\.|\.$/g, "");
-  return `${slug.toLowerCase()}@students.kabarak.ac.ke`;
+export function isoDow(date: string) {
+  const d = new Date(date + "T00:00:00").getDay();
+  return d === 0 ? 7 : d;
 }
 
-export function identifierToEmail(identifier: string) {
-  const value = identifier.trim();
-  if (value.includes("@")) return value.toLowerCase();
-  // No longer deriving students.kabarak.ac.ke addresses;
-  // caller should resolve via profiles or use the identifier as-is.
-  return value;
+/** No registration number pattern — sign in with email only. */
 }
 
 export const GENERIC_AUTH_ERROR =

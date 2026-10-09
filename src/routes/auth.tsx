@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { supabase } from "@/integrations/supabase/client";
 import { signInWithThrottle } from "@/lib/auth.functions";
-import { GENERIC_AUTH_ERROR, REG_PATTERN, STAFF_EMAIL, regToEmail } from "@/lib/kabuslotin";
+import { GENERIC_AUTH_ERROR } from "@/lib/kabuslotin";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/auth")({
       {
         name: "description",
         content:
-          "Sign in to KABU SlotIn with your School of Law registration number or your Kabarak University staff email.",
+          "Sign in to KABU SlotIn with your email and password.",
       },
       { property: "og:title", content: "Sign in — KABU SlotIn" },
       {
@@ -272,14 +272,11 @@ function SignIn({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
   );
 }
 
-type StaffRole = "lecturer" | "dean" | "it_support";
+type ExtractedRole = "student" | "lecturer" | "dean" | "administrator" | "it_support";
 
 function SignUp({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
-  const [kind, setKind] = useState<"student" | "staff">("student");
+  const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
-  const [reg, setReg] = useState("");
-  const [staffEmail, setStaffEmail] = useState("");
-  const [staffRole, setStaffRole] = useState<StaffRole>("lecturer");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -291,12 +288,7 @@ function SignUp({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
     setInfo(null);
 
     if (fullName.trim().length < 2) return setError("Enter your full name.");
-    if (kind === "student" && !REG_PATTERN.test(reg.trim())) {
-      return setError("Use your School of Law registration number, for example LAW/M/1178/05/26.");
-    }
-    if (kind === "staff" && !STAFF_EMAIL.test(staffEmail.trim())) {
-      return setError("Staff accounts need a university email ending in @kabarak.ac.ke.");
-    }
+    if (email.trim().length < 5) return setError("Enter a valid email address.");
     if (password.length < MIN_PASSWORD) {
       return setError(`Choose a password of at least ${MIN_PASSWORD} characters.`);
     }
@@ -305,11 +297,16 @@ function SignUp({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
     setError(null);
     setBusy(true);
     try {
-      const email = kind === "student" ? regToEmail(reg) : staffEmail.trim().toLowerCase();
-      const data =
-        kind === "student"
-          ? { role: "student", full_name: fullName.trim(), reg_number: reg.trim().toUpperCase() }
-          : { role: staffRole, full_name: fullName.trim() };
+      // Determine role from email domain after sign-up
+      const emailLower = email.trim().toLowerCase();
+      let role: "student" | "lecturer" | "dean" | "administrator" | "it_support";
+      if (emailLower === "lboli@kabarak.ac.ke") role = "administrator";
+      else if (emailLower === "rwahome@kabarak.ac.ke") role = "it_support";
+      else if (emailLower === "ikumilu@kabarak.ac.ke") role = "dean";
+      else if (emailLower.endsWith("@kabarak.ac.ke")) role = "lecturer";
+      else role = "student";
+
+      const data = { role, full_name: fullName.trim() };
 
       const { data: created, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -318,11 +315,7 @@ function SignUp({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
       });
 
       if (signUpError) {
-        setError(
-          kind === "staff"
-            ? "We could not create that account. Check your details, and make sure the School Administrator has approved your email."
-            : "We could not create that account. Check your registration number and try again.",
-        );
+        setError("We could not create that account. Try again in a moment.");
         return;
       }
       if (created.session) {
@@ -345,69 +338,112 @@ function SignUp({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
         Create your account
       </h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Students use their registration number. Staff need an email the School Administrator has
-        approved. Administrator accounts cannot be created here.
+        Enter your email and password to get started.
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={submit}>
         <div className="space-y-1.5">
-          <Label htmlFor="kind">I am a</Label>
-          <select
-            id="kind"
-            className={fieldClass}
-            value={kind}
-            onChange={(e) => setKind(e.target.value as "student" | "staff")}
-          >
-            <option value="student">Student</option>
-            <option value="staff">Staff member</option>
-          </select>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="full-name">Full name</Label>
+          <Label htmlFor="email">Email</Label>
           <Input
-            id="full-name"
+            id="email"
+            autoComplete="email"
+            placeholder="email@kabarak.ac.ke"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="fullName">Full name</Label>
+          <Input
+            id="fullName"
             autoComplete="name"
+            placeholder="Full name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Password</Label>
+            <Link
+              to="/auth/callback"
+              className="text-xs font-medium text-secondary hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <PasswordInput
+            id="password"
+            autoComplete="current-password"
+            value={password}
+
+      const { data: created, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data, emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+
+      if (signUpError) {
+        setError("We could not create that account. Try again in a moment.");
+        return;
+      }
+      if (created.session) {
+        await onSignedIn();
+        return;
+      }
+      setInfo(
+        "Account created. If a confirmation email was sent, open the link in it, then sign in.",
+      );
+    } catch {
+      setError("We could not create that account. Try again in a moment.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <h1 className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
+        Create your account
+      </h1>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+              Enter your email and password to get started.
+            </p>
+
+      <form className="mt-6 space-y-4" onSubmit={submit}>
+        <div className="space-y-1.5">
+          <Label htmlFor="kind">I am a</Label>
+          <div className="space-y-1.5">
+          <Label htmlFor="fullName">Full name</Label>
+          <Input
+            id="fullName"
+            autoComplete="name"
+            placeholder="Full name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
           />
         </div>
 
-        {kind === "student" ? (
-          <div className="space-y-1.5">
-            <Label htmlFor="reg">Registration number</Label>
-            <Input
-              id="reg"
-              autoComplete="username"
-              placeholder="LAW/M/1178/05/26"
-              value={reg}
-              onChange={(e) => setReg(e.target.value)}
-            />
-          </div>
-        ) : (
+        {fullName.trim().length < 2 ? setError("Enter your full name.") : setError(null)}
           <>
             <div className="space-y-1.5">
-              <Label htmlFor="staff-role">Account type</Label>
-              <select
-                id="staff-role"
-                className={fieldClass}
-                value={staffRole}
-                onChange={(e) => setStaffRole(e.target.value as StaffRole)}
-              >
-                <option value="lecturer">Lecturer</option>
-                <option value="dean">Dean</option>
-                <option value="it_support">IT Support</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="staff-email">University email</Label>
+              <div className="space-y-1.5">
+              <Label htmlFor="fullName">Full name</Label>
               <Input
-                id="staff-email"
-                type="email"
-                autoComplete="username"
-                placeholder="name@kabarak.ac.ke"
-                value={staffEmail}
-                onChange={(e) => setStaffEmail(e.target.value)}
+                id="fullName"
+                autoComplete="name"
+                placeholder="Full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
               />
             </div>
           </>
