@@ -73,18 +73,22 @@ export async function clearFailures(scope: string, identifier: string) {
   if (error) throw new Error("Could not record the sign-in attempt.");
 }
 
-/** Counts one failed sign-in; locks the scope for the window once the maximum is reached. */
+/**
+ * Counts one failed sign-in; locks the scope for the window once the maximum is reached.
+ * Delegates to record_auth_attempt(_succeeded => false), which enforces the window in the
+ * database (5 failures per 15 minutes) — there is no separate record_auth_failure function,
+ * and calling a missing one made every rejected sign-in throw instead of being counted.
+ */
 export async function recordFailure(
   scope: "login:account" | "login:ip",
   identifier: string,
-  maxFailures: number,
-  windowMinutes: number,
+  _maxFailures: number,
+  _windowMinutes: number,
 ) {
-  const { error } = await supabaseAdmin.rpc("record_auth_failure", {
+  const { error } = await supabaseAdmin.rpc("record_auth_attempt", {
     _scope: scope,
     _identifier: identifier,
-    _max_failures: maxFailures,
-    _window_minutes: windowMinutes,
+    _succeeded: false,
   });
   if (error) throw new Error("Could not record the sign-in attempt.");
 }
