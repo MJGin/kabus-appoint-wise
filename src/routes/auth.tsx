@@ -77,8 +77,8 @@ function AuthPage() {
             One account, the right view of the School of Law.
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-on-brand/85">
-            Students book with their registration number. Staff use their Kabarak email.
-          </p>
+              Enter your email and password to sign in.
+            </p>
         </div>
         <p className="relative text-xs text-on-brand/75">
           KABU SlotIn · Kabarak University School of Law
@@ -189,21 +189,21 @@ function Credentials({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
 }
 
 function SignIn({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
-  const [identifier, setIdentifier] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!identifier.trim() || password.length < 8) {
+    if (!email.trim() || password.length < 8) {
       setError(GENERIC_AUTH_ERROR);
       return;
     }
     setError(null);
     setBusy(true);
     try {
-      const result = await signInWithThrottle({ data: { identifier, password } });
+      const result = await signInWithThrottle({ data: { email, password } });
       if (!result.ok) {
         setError(result.error);
         return;
@@ -235,13 +235,13 @@ function SignIn({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
 
       <form className="mt-6 space-y-4" onSubmit={submit}>
         <div className="space-y-1.5">
-          <Label htmlFor="identifier">Registration number or staff email</Label>
+          <Label htmlFor="email">Email</Label>
           <Input
-            id="identifier"
-            autoComplete="username"
-            placeholder="LAW/M/1178/05/26 or name@kabarak.ac.ke"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
+            id="email"
+            autoComplete="email"
+            placeholder="email@kabarak.ac.ke"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
