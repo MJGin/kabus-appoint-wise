@@ -1,4 +1,3 @@
-
 -- ========== ENUMS ==========
 CREATE TYPE public.app_role AS ENUM ('student','lecturer','dean','administrator','it_support');
 CREATE TYPE public.time_block AS ENUM ('block_1','block_2','block_3');
@@ -283,7 +282,7 @@ BEGIN
   IF _date < sem.start_date OR _date > sem.end_date THEN RETURN false; END IF;
 
   IF EXISTS (SELECT 1 FROM public.makeup_sessions m
-             WHERE m.lecturer_id = _lecturer AND m.session_date = _date AND m.block = _block) THEN
+              WHERE m.lecturer_id = _lecturer AND m.session_date = _date AND m.block = _block) THEN
     RETURN true;
   END IF;
 
@@ -418,7 +417,7 @@ BEGIN
       -- No longer checking approved_staff or @kabarak.ac.ke domain
       INSERT INTO public.profiles (id, full_name, email)
       VALUES (NEW.id, full_name, NEW.email);
-    ELSE
+  ELSE
     RAISE EXCEPTION 'Unknown account type.';
   END IF;
 
@@ -429,52 +428,4 @@ $$;
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Update profiles policy to allow Firebase users
-DROP POLICY IF EXISTS "own profile read" ON public.profiles;
-DROP POLICY IF EXISTS "published staff profiles" ON public.profiles;
-DROP POLICY IF EXISTS "oversight profile read" ON public.profiles;
-DROP POLICY IF EXISTS "own profile update" ON public.profiles;
-
-CREATE POLICY "own profile read" ON public.profiles FOR SELECT TO authenticated
-  USING (id = auth.uid() OR public.is_firebase_user(auth.uid()));
-
-CREATE POLICY "published staff profiles" ON public.profiles FOR SELECT TO authenticated
-  USING (public.has_role(id, 'lecturer') OR public.is_firebase_user(auth.uid()));
-
-CREATE POLICY "oversight profile read" ON public.profiles FOR SELECT TO authenticated
-  USING (public.current_role_is(ARRAY['administrator','it_support','dean']::public.app_role[]) OR public.is_firebase_user(auth.uid()));
-
-CREATE POLICY "own profile update" ON public.profiles FOR UPDATE TO authenticated
-  USING (id = auth.uid()) WITH CHECK (id = auth.uid());
-
--- Update appointments policy to allow Firebase users
-DROP POLICY IF EXISTS "student books own appointment" ON public.appointments;
-DROP POLICY IF EXISTS "student cancels own pending" ON public.appointments;
-DROP POLICY IF EXISTS "lecturer decides own appointments" ON public.appointments;
-
-CREATE POLICY "student books own appointment" ON public.appointments FOR INSERT TO authenticated
-  WITH CHECK (student_id = auth.uid() AND (public.has_role(auth.uid(), 'student') OR public.is_firebase_user(auth.uid())));
-
-CREATE POLICY "student cancels own pending" ON public.appointments FOR UPDATE TO authenticated
-  USING (student_id = auth.uid() AND status = 'pending' AND (status = 'cancelled' OR public.is_firebase_user(auth.uid())));
-
-CREATE POLICY "lecturer decides own appointments" ON public.appointments FOR UPDATE TO authenticated
-  USING (lecturer_id = auth.uid() AND public.has_role(auth.uid(), 'lecturer'));
-
--- Update appointment_reasons policy
-DROP POLICY IF EXISTS "only the two parties read the reason" ON public.appointment_reasons;
-DROP POLICY IF EXISTS "student writes own reason" ON public.appointment_reasons;
-
-CREATE POLICY "only the two parties read the reason" ON public.appointment_reasons FOR SELECT TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.appointments a
-    WHERE a.id = appointment_id AND (a.student_id = auth.uid() OR a.lecturer_id = auth.uid())
-    AND (public.has_role(auth.uid(), 'student') OR public.is_firebase_user(auth.uid()))
-  ));
-
-CREATE POLICY "student writes own reason" ON public.appointment_reasons FOR INSERT TO authenticated
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.appointments a
-    WHERE a.id = appointment_id AND a.student_id = auth.uid()
-    AND (public.has_role(auth.uid(), 'student') OR public.is_firebase_user(auth.uid()))
-  ));
+-- Firebase-aware functions are added in a separate migration (20261009000000_firebase_integration.sql)
