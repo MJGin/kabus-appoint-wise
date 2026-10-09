@@ -1,3 +1,11 @@
+# Secrets — never commit Supabase keys
+.env
+.env.*
+*.env
+
+# Local account credentials
+user-accounts.txt
+
 # Logs
 logs
 *.log
@@ -19,11 +27,6 @@ dist-ssr
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
-
-# Environment files: never commit secrets (service-role key, database password)
-.env
-.env.*
-!.env.example
 
 # Editor directories and files
 .vscode/*
