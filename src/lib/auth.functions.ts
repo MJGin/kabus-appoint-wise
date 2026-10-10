@@ -25,6 +25,28 @@ export type SignInResult =
   { ok: true; accessToken: string; refreshToken: string } | { ok: false; error: string };
 
 /**
+ * Turns what the user typed into the account's real email address.
+ * A staff/student email passes through; a registration number is looked up in profiles so
+ * seeded accounts (mmokeira@kabarak.ac.ke etc.) resolve correctly. The derived
+ * students.kabarak.ac.ke address remains only as a fallback for accounts that signed up
+ * through the form, which are created with exactly that address.
+ */
+async function resolveSignInEmail(identifier: string): Promise<string> {
+  const value = identifier.trim();
+  if (value.includes("@")) return value.toLowerCase();
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .select("email")
+    .ilike("reg_number", value)
+    .maybeSingle();
+  if (!error && data?.email) return data.email.toLowerCase();
+
+  return identifierToEmail(value);
+}
+
+/**
  * Password sign-in with throttling by account and by network address.
  * The password is checked here, on the server, so a failed attempt is always counted and a
  * client cannot claim success to reset its own counter. The error text never says whether the
@@ -35,7 +57,7 @@ export const signInWithThrottle = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SignInResult> => {
     const t = await import("@/lib/auth-throttle.server");
 
-    const email = identifierToEmail(data.identifier);
+    const email = await resolveSignInEmail(data.identifier);
     const accountKey = t.hashIdentifier(email);
     const ipKey = t.hashIdentifier(t.clientAddress());
 

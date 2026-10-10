@@ -47,7 +47,8 @@ Profiles pre-created; accounts activate on first sign-up/sign-in.
 
 1. Open the application and click **Sign In**.
 2. Use email + password from the tables above.
-3. Students may also sign in with their **Reg Number** (`LAW/M/XXXX/XX/XX`) where supported.
+3. Students may also sign in with their **Reg Number** (`LAW/M/XXXX/XX/XX`);
+   the app resolves it to the account email automatically.
 4. Password can be reset via **Forgot Password** (delivered to the account email).
 
 ## Time blocks
