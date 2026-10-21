@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791193731195,
+      "tag": "0000_staff_listings",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791193740846,
+      "tag": "0001_staff_listings_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791193752404,
+      "tag": "0002_staff_photos_signed_in_read",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791247775075,
+      "tag": "0003_available_after_classes",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-shell: var(--brand-shell);
+  --color-on-brand: var(--on-brand);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.5rem;
+  /* Mist #F3F7F8 */
+  --background: oklch(0.973 0.006 205);
+  /* Ink #17202A */
+  --foreground: oklch(0.239 0.023 249);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.239 0.023 249);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.239 0.023 249);
+  /* Electric Teal #18B7B0 */
+  --primary: oklch(0.7 0.118 190);
+  --primary-foreground: oklch(0.205 0.038 250);
+  /* Coral #FF6B5B */
+  --secondary: oklch(0.7 0.19 29);
+  --secondary-foreground: oklch(0.19 0.035 249);
+  --muted: oklch(0.947 0.009 205);
+  --muted-foreground: oklch(0.5 0.027 245);
+  --accent: oklch(0.7 0.19 29);
+  --accent-foreground: oklch(0.19 0.035 249);
+  --destructive: oklch(0.61 0.2 25);
+  --destructive-foreground: oklch(0.995 0.002 20);
+  /* Green #22A06B */
+  --success: oklch(0.634 0.13 158);
+  --success-foreground: oklch(0.995 0.002 160);
+  /* Amber #F2B84B */
+  --warning: oklch(0.813 0.129 80);
+  --warning-foreground: oklch(0.32 0.03 80);
+  /* Midnight Navy #0B1F33 */
+  --brand-ink: oklch(0.235 0.05 250);
+  --brand-shell: oklch(0.235 0.05 250);
+  --on-brand: oklch(0.98 0.005 205);
+  /* Cornflower blue taken from the KABU SlotIn mark */
+  --brand-blue: oklch(0.6346 0.0993 262.68);
+  --border: oklch(0.884 0.014 215);
+  --input: oklch(0.884 0.014 215);
+  --ring: oklch(0.7 0.118 190);
+  --gradient-hero: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--brand-ink) 94%, transparent),
+    color-mix(in oklab, var(--brand-ink) 45%, transparent) 62%,
+    color-mix(in oklab, var(--primary) 22%, transparent)
+  );
+  --gradient-brand: linear-gradient(
+    120deg,
+    var(--brand-ink),
+    color-mix(in oklab, var(--brand-ink) 72%, var(--primary))
+  );
+  --shadow-soft: 0 1px 2px oklch(0.235 0.05 250 / 7%), 0 16px 40px -20px oklch(0.235 0.05 250 / 24%);
+  --shadow-lift: 0 24px 60px -26px color-mix(in oklab, var(--brand-ink) 65%, transparent);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.129 0.042 264.695);
+  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.18 0.025 245);
+  --foreground: oklch(0.935 0.012 210);
+  --card: oklch(0.235 0.029 243);
+  --card-foreground: oklch(0.935 0.012 210);
+  --popover: oklch(0.235 0.029 243);
+  --popover-foreground: oklch(0.935 0.012 210);
+  --primary: oklch(0.75 0.116 189);
+  --primary-foreground: oklch(0.18 0.03 245);
+  --secondary: oklch(0.74 0.165 28);
+  --secondary-foreground: oklch(0.17 0.025 245);
+  --muted: oklch(0.285 0.027 243);
+  --muted-foreground: oklch(0.74 0.014 225);
+  --accent: oklch(0.325 0.035 205);
+  --accent-foreground: oklch(0.96 0.01 205);
+  --destructive: oklch(0.72 0.17 25);
+  --destructive-foreground: oklch(0.17 0.025 245);
+  --success: oklch(0.73 0.13 158);
+  --success-foreground: oklch(0.17 0.025 245);
+  --warning: oklch(0.82 0.12 80);
+  --warning-foreground: oklch(0.87 0.105 80);
+  --brand-ink: oklch(0.92 0.018 210);
+  --brand-shell: oklch(0.145 0.032 249);
+  --on-brand: oklch(0.98 0.005 205);
+  --brand-blue: oklch(0.75 0.095 262);
+  --border: oklch(0.4 0.024 230);
+  --input: oklch(0.4 0.024 230);
+  --ring: oklch(0.75 0.116 189);
+  --gradient-brand: linear-gradient(120deg, var(--brand-shell), color-mix(in oklab, var(--brand-shell) 72%, var(--primary)));
+  --shadow-soft: 0 1px 2px oklch(0.1 0.02 245 / 25%), 0 16px 40px -20px oklch(0.1 0.02 245 / 60%);
+  --shadow-lift: 0 24px 60px -26px oklch(0.1 0.02 245 / 70%);
+  --sidebar: oklch(0.235 0.029 243);
+  --sidebar-foreground: oklch(0.935 0.012 210);
+  --sidebar-primary: oklch(0.75 0.116 189);
+  --sidebar-primary-foreground: oklch(0.18 0.03 245);
+  --sidebar-accent: oklch(0.325 0.035 205);
+  --sidebar-accent-foreground: oklch(0.96 0.01 205);
+  --sidebar-border: oklch(0.4 0.024 230);
+  --sidebar-ring: oklch(0.75 0.116 189);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    letter-spacing: 0;
+  }
+  html, body {
+    transition: background-color 300ms ease, color 300ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html, body { transition: none; }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-transition :where(body, header, main, section, article, aside, nav, footer, div, button, input, textarea, a, p, span, h1, h2, h3, svg) {
+    transition-property: background-color, color, border-color, fill, stroke;
+    transition-duration: 300ms;
+    transition-timing-function: ease;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .slot-rise {
+    animation: slot-rise 700ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  }
+}
+
+@keyframes slot-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scroll-fade-ready .scroll-fade-item {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 500ms ease-out, transform 500ms ease-out;
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  .scroll-fade-ready .scroll-fade-item.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .scroll-fade-item[data-stagger="1"] { --reveal-delay: 100ms; }
+  .scroll-fade-item[data-stagger="2"] { --reveal-delay: 200ms; }
+  .scroll-fade-item[data-stagger="3"] { --reveal-delay: 300ms; }
+  .scroll-fade-item[data-stagger="4"] { --reveal-delay: 400ms; }
+}
+
+/*
+ * Phones never scroll sideways: any stray wide element is clipped instead of
+ * pushing the page wider than the screen (which ate the right margin).
+ * `clip` (not `hidden`) keeps sticky headers working.
+ */
+html,
+body {
+  overflow-x: clip;
+}
