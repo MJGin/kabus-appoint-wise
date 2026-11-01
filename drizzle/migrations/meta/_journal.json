@@ -50,6 +50,13 @@
       "when": 1793525060132,
       "tag": "0006_activate_semester_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793525070778,
+      "tag": "0007_free_day_without_classes",
+      "breakpoints": true
     }
   ]
 }
