@@ -574,6 +574,8 @@ export type Database = {
           _decision: Database["public"]["Enums"]["appointment_status"]
           _new_block?: Database["public"]["Enums"]["time_block"]
           _new_date?: string
+          _new_duration?: number
+          _new_start?: string
         }
         Returns: undefined
       }
