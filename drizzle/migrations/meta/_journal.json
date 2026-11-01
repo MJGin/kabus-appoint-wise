@@ -78,6 +78,13 @@
       "when": 1793525115822,
       "tag": "0010_consent_records",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793525131936,
+      "tag": "0011_self_signup_students_teacher_approvals",
+      "breakpoints": true
     }
   ]
 }

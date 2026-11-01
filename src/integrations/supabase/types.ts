@@ -479,6 +479,27 @@ export type Database = {
         }
         Relationships: []
       }
+      teacher_requests: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
       timetable_slots: {
         Row: {
           block: Database["public"]["Enums"]["time_block"]
