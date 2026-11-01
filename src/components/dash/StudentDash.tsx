@@ -193,7 +193,8 @@ export function StudentDash({ userId }: { userId: string }) {
         if (!(await allowAction("booking"))) throw new Error("Too many requests. Try again in 15 minutes.");
         const { error: e } = await supabase.rpc("book_appointment_slot", {
           _lecturer_id: accountId!,
-          _listing_id: listingId,
+          // NULL is valid here: a booking made against a real lecturer account has no listing.
+          _listing_id: listingId as string,
           _appt_date: slot.date,
           _block: slot.block,
           _start_time: startTime,

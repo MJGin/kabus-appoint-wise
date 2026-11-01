@@ -97,7 +97,8 @@ export async function flushOutbox(userId: string): Promise<string[]> {
             item.startTime && item.durationMinutes
               ? await supabase.rpc("book_appointment_slot", {
                   _lecturer_id: item.lecturerId!,
-                  _listing_id: item.listingId,
+                  // NULL is valid here: a booking made against a real lecturer account has no listing.
+                  _listing_id: item.listingId as string,
                   _appt_date: item.date,
                   _block: item.block,
                   _start_time: item.startTime,
