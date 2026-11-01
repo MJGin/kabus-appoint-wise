@@ -29,6 +29,62 @@
       "when": 1791247775075,
       "tag": "0003_available_after_classes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793525038534,
+      "tag": "0004_approved_names",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793525053210,
+      "tag": "0005_name_source_of_truth",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793525060132,
+      "tag": "0006_activate_semester_rpc",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793525070778,
+      "tag": "0007_free_day_without_classes",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793525088732,
+      "tag": "0008_reschedule_uses_booking_rule",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793525105461,
+      "tag": "0009_names_follow_approved_list",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793525115822,
+      "tag": "0010_consent_records",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793525131936,
+      "tag": "0011_self_signup_students_teacher_approvals",
+      "breakpoints": true
     }
   ]
 }
