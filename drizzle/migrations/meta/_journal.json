@@ -64,6 +64,13 @@
       "when": 1793525088732,
       "tag": "0008_reschedule_uses_booking_rule",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793525105461,
+      "tag": "0009_names_follow_approved_list",
+      "breakpoints": true
     }
   ]
 }
