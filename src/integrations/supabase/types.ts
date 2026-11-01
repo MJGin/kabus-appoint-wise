@@ -198,6 +198,42 @@ export type Database = {
         }
         Relationships: []
       }
+      consent_records: {
+        Row: {
+          age_confirmed: boolean
+          created_at: string
+          decision: string
+          email: string
+          form_version: string
+          full_name: string
+          id: string
+          participant_category: string
+          user_id: string
+        }
+        Insert: {
+          age_confirmed?: boolean
+          created_at?: string
+          decision: string
+          email: string
+          form_version: string
+          full_name: string
+          id?: string
+          participant_category: string
+          user_id: string
+        }
+        Update: {
+          age_confirmed?: boolean
+          created_at?: string
+          decision?: string
+          email?: string
+          form_version?: string
+          full_name?: string
+          id?: string
+          participant_category?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       error_reports: {
         Row: {
           context: string | null
@@ -604,6 +640,15 @@ export type Database = {
       record_auth_attempt: {
         Args: { _identifier: string; _scope: string; _succeeded: boolean }
         Returns: undefined
+      }
+      record_consent: {
+        Args: {
+          _age_confirmed: boolean
+          _decision: string
+          _form_version: string
+          _full_name: string
+        }
+        Returns: string
       }
       write_log: {
         Args: {

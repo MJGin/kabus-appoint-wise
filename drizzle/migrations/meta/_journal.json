@@ -71,6 +71,13 @@
       "when": 1793525105461,
       "tag": "0009_names_follow_approved_list",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793525115822,
+      "tag": "0010_consent_records",
+      "breakpoints": true
     }
   ]
 }
