@@ -6,9 +6,19 @@ import { ConsentRecordsPanel } from "@/components/dash/ConsentRecordsPanel";
 import { Empty, Note, Panel, Row } from "@/components/dash/parts";
 import { TimetableCalendar } from "@/components/calendar/TimetableCalendar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { supabase } from "@/integrations/supabase/client";
+import { createApprovedLogin } from "@/lib/admin.functions";
 import { BLOCKS, type Block, blockLabel, DAYS, dayLabel, formatDate, todayIso } from "@/lib/kabuslotin";
 
 type StaffRole = "lecturer" | "dean" | "it_support";
@@ -19,6 +29,9 @@ export function AdminDash() {
   const [info, setInfo] = useState<string | null>(null);
   const [editingStaff, setEditingStaff] = useState<string | null>(null);
   const [editingStudent, setEditingStudent] = useState<string | null>(null);
+  const [creatingFor, setCreatingFor] = useState<{ email: string; fullName: string | null } | null>(
+    null,
+  );
 
   function fail(e: Error) {
     setInfo(null);
@@ -248,28 +261,24 @@ export function AdminDash() {
     onError: fail,
   });
 
-  // Mints a real login for an approved email with the common starting
-  // password. The server function checks the caller is the Administrator and
-  // takes the role from the approved lists; profiles and roles are built by
-  // the sign-up trigger automatically.
+  // Creates the actual account for an approved email, with the starting
+  // password the Administrator types in the dialog. The server function
+  // checks the caller is the Administrator and takes the role from the
+  // approved lists; profiles and roles are built by the sign-up trigger
+  // automatically.
   const createLogin = useMutation({
-    mutationFn: async (input: { email: string; fullName?: string | null }) => {
-      const { data, error: e } = await supabase.functions.invoke("create-approved-user", {
-        body: { email: input.email, fullName: input.fullName ?? undefined },
-      });
-      if (e) {
-        const message =
-          (data as { error?: string } | null)?.error ??
-          (e as { message?: string }).message ??
-          "Could not create that login.";
-        throw new Error(message);
-      }
-      if ((data as { error?: string } | null)?.error) {
-        throw new Error((data as { error: string }).error);
-      }
+    mutationFn: async (input: { email: string; fullName: string | null; password: string }) => {
+      const payload: { email: string; password: string; fullName?: string } = {
+        email: input.email,
+        password: input.password,
+      };
+      if (input.fullName) payload.fullName = input.fullName;
+      await createApprovedLogin({ data: payload });
     },
-    onSuccess: (_d, input) =>
-      ok(`Login created for ${input.email} — they sign in with the common password.`, []),
+    onSuccess: (_d, input) => {
+      setCreatingFor(null);
+      ok(`Login created for ${input.email} — they sign in with the password you set.`, []);
+    },
     onError: fail,
   });
 
@@ -393,7 +402,7 @@ export function AdminDash() {
       </Panel>
 
       <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-        <Panel title="Approved staff emails" description="Type the name and email, then Approve. The account always takes the name written here, even if you add the person in the Supabase dashboard (which has no name box). Create login makes the account with the common password.">
+        <Panel title="Approved staff emails" description="Type the name and email, then Approve. The account always takes the name written here, even if you add the person in the Supabase dashboard (which has no name box). Create login then makes the account — you choose the starting password when you press it.">
           <form
             className="flex flex-wrap items-end gap-2"
             onSubmit={(e) => {
@@ -473,7 +482,7 @@ export function AdminDash() {
                         size="sm"
                         variant="brandOutline"
                         disabled={createLogin.isPending}
-                        onClick={() => createLogin.mutate({ email: s.email, fullName: s.full_name })}
+                        onClick={() => setCreatingFor({ email: s.email, fullName: s.full_name })}
                       >
                         Create login
                       </Button>
@@ -488,7 +497,7 @@ export function AdminDash() {
           </div>
         </Panel>
 
-        <Panel title="Approved student emails" description="Type the name and email, then Approve. The account always takes the name written here, even if you add the person in the Supabase dashboard (which has no name box). Create login makes the account with the common password.">
+        <Panel title="Approved student emails" description="Type the name and email, then Approve. The account always takes the name written here, even if you add the person in the Supabase dashboard (which has no name box). Create login makes the account and you choose its starting password.">
           <form
             className="flex flex-wrap items-end gap-2"
             onSubmit={(e) => {
@@ -560,7 +569,7 @@ export function AdminDash() {
                         size="sm"
                         variant="brandOutline"
                         disabled={createLogin.isPending}
-                        onClick={() => createLogin.mutate({ email: s.email, fullName: s.full_name })}
+                        onClick={() => setCreatingFor({ email: s.email, fullName: s.full_name })}
                       >
                         Create login
                       </Button>
@@ -575,7 +584,7 @@ export function AdminDash() {
           </div>
         </Panel>
 
-        <Panel title="Teacher applications" description="Teachers who asked for a login on the Create account page. Approve adds them as a lecturer with the name they typed; Dismiss says no. After approving, press Create login on the staff list to give them the common password.">
+        <Panel title="Teacher applications" description="Teachers who asked for a login on the Create account page. Approve adds them as a lecturer with the name they typed; Dismiss says no. After approving, press Create login on the staff list to give them a starting password.">
           {!teacherRequests.data?.length ? (
             <Empty>No teacher applications yet.</Empty>
           ) : (
@@ -834,6 +843,65 @@ export function AdminDash() {
           )}
         </div>
       </Panel>
+
+      <Dialog
+        open={!!creatingFor}
+        onOpenChange={(open) => {
+          if (!open) setCreatingFor(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create login</DialogTitle>
+            <DialogDescription>
+              Choose the starting password for {creatingFor?.email}. They sign in with it, then can
+              change it any time from the Forgot password page.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="grid gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const f = new FormData(e.currentTarget);
+              const password = String(f.get("password") ?? "");
+              const confirm = String(f.get("confirm") ?? "");
+              if (password !== confirm) {
+                setError("The two passwords do not match.");
+                return;
+              }
+              if (!creatingFor) return;
+              createLogin.mutate({
+                email: creatingFor.email,
+                fullName: creatingFor.fullName,
+                password,
+              });
+            }}
+          >
+            <PasswordInput
+              name="password"
+              label="Starting password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+            <PasswordInput
+              name="confirm"
+              label="Repeat it"
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setCreatingFor(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="brand" disabled={createLogin.isPending}>
+                {createLogin.isPending ? "Creating…" : "Create login"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
