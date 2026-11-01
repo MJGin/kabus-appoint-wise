@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -116,27 +116,32 @@ export type Database = {
           student_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "appointments_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "staff_listings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       approved_staff: {
         Row: {
           created_at: string
           email: string
-          full_name: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
         }
         Insert: {
           created_at?: string
           email: string
-          full_name?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
         }
         Update: {
           created_at?: string
           email?: string
-          full_name?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
         }
@@ -146,67 +151,18 @@ export type Database = {
         Row: {
           created_at: string
           email: string
-          full_name: string | null
           id: string
         }
         Insert: {
           created_at?: string
           email: string
-          full_name?: string | null
           id?: string
         }
         Update: {
           created_at?: string
           email?: string
-          full_name?: string | null
           id?: string
         }
-        Relationships: []
-      }
-      notifications: {
-        Row: {
-          body: string
-          created_at: string
-          id: string
-          read: boolean
-          title: string
-          type: string
-          user_id: string
-        }
-        Insert: {
-          body: string
-          created_at?: string
-          id?: string
-          read?: boolean
-          title: string
-          type: string
-          user_id: string
-        }
-        Update: {
-          body?: string
-          created_at?: string
-          id?: string
-          read?: boolean
-          title?: string
-          type?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      consent_records: {
-        Row: {
-          age_confirmed: boolean
-          created_at: string
-          decision: string
-          email: string
-          form_version: string
-          full_name: string
-          id: string
-          participant_category: string
-          user_id: string
-        }
-        Insert: never
-        Update: never
         Relationships: []
       }
       auth_throttle: {
@@ -334,6 +290,36 @@ export type Database = {
           lecturer_id?: string
           note?: string | null
           session_date?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -521,15 +507,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      record_consent: {
-        Args: {
-          _age_confirmed: boolean
-          _decision: string
-          _form_version: string
-          _full_name: string
-        }
-        Returns: string
-      }
       book_appointment: {
         Args: {
           _appt_date: string
@@ -544,15 +521,15 @@ export type Database = {
           _appt_date: string
           _block: Database["public"]["Enums"]["time_block"]
           _duration_minutes: number
-          _lecturer_id: string | null
-          _listing_id: string | null
+          _lecturer_id: string
+          _listing_id: string
           _reason: string
           _start_time: string
         }
         Returns: string
       }
       busy_times: {
-        Args: { _lecturer_id?: string | null; _listing_id?: string | null }
+        Args: { _lecturer_id?: string; _listing_id?: string }
         Returns: {
           appt_date: string
           block: Database["public"]["Enums"]["time_block"]
@@ -587,8 +564,6 @@ export type Database = {
           _decision: Database["public"]["Enums"]["appointment_status"]
           _new_block?: Database["public"]["Enums"]["time_block"]
           _new_date?: string
-          _new_duration?: number
-          _new_start?: string
         }
         Returns: undefined
       }
@@ -616,15 +591,6 @@ export type Database = {
       }
       record_auth_attempt: {
         Args: { _identifier: string; _scope: string; _succeeded: boolean }
-        Returns: undefined
-      }
-      record_auth_failure: {
-        Args: {
-          _identifier: string
-          _max_failures: number
-          _scope: string
-          _window_minutes: number
-        }
         Returns: undefined
       }
       write_log: {
