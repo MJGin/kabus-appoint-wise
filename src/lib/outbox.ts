@@ -96,8 +96,8 @@ export async function flushOutbox(userId: string): Promise<string[]> {
           const { error } =
             item.startTime && item.durationMinutes
               ? await supabase.rpc("book_appointment_slot", {
-                  _lecturer_id: item.lecturerId,
-                  _listing_id: item.listingId ?? null,
+                  _lecturer_id: item.lecturerId ?? undefined,
+                  _listing_id: item.listingId ?? undefined,
                   _appt_date: item.date,
                   _block: item.block,
                   _start_time: item.startTime,
