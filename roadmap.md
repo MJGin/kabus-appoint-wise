@@ -36,3 +36,8 @@
 - [ ] Remaining staff emails from the timetable PDF still to be approved
 
 Waiting on user: the remaining staff to create their accounts at the sign-up page (teacher approval flow).
+
+## Nov 1 — Create login button fixed
+- [x] Create login now works: pressing it asks the Administrator to type a starting password, then creates the account server-side (src/lib/admin.functions.ts, dialog in AdminDash). Every creation is written to the activity log.
+- [x] Root cause found and fixed: the button called a backend function that was never deployed, and eight database changes from mid-October (names on approved lists, semester switch, free-day booking rule, reschedule rule, consent records, self sign-up/teacher applications) had never been applied — all applied and verified.
+- [ ] Still waiting on the user: set up the Administrator account once, then test Create login; delete the four leftover test student accounts; upload staff emails + timetable.
