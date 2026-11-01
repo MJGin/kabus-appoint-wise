@@ -513,6 +513,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_semester_lotin: {
+        Args: { _semester_id: string }
+        Returns: undefined
+      }
       book_appointment: {
         Args: {
           _appt_date: string
