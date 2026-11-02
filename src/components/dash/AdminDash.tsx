@@ -543,7 +543,7 @@ export function AdminDash() {
                         size="sm"
                         variant="brandOutline"
                         disabled={createLogin.isPending}
-                        onClick={() => setCreatingFor({ email: s.email, fullName: s.full_name })}
+                        onClick={() => { setError(null); setCreatingFor({ email: s.email, fullName: s.full_name }); }}
                       >
                         Create login
                       </Button>
@@ -630,7 +630,7 @@ export function AdminDash() {
                         size="sm"
                         variant="brandOutline"
                         disabled={createLogin.isPending}
-                        onClick={() => setCreatingFor({ email: s.email, fullName: s.full_name })}
+                        onClick={() => { setError(null); setCreatingFor({ email: s.email, fullName: s.full_name }); }}
                       >
                         Create login
                       </Button>
@@ -920,6 +920,7 @@ export function AdminDash() {
               copy the sign-in details to send to them.
             </DialogDescription>
           </DialogHeader>
+          {error && <Note tone="error">{error}</Note>}
           <form
             className="grid gap-3"
             onSubmit={(e) => {
