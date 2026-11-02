@@ -543,7 +543,7 @@ export function AdminDash() {
                         size="sm"
                         variant="brandOutline"
                         disabled={createLogin.isPending}
-                        onClick={() => setCreatingFor({ email: s.email, fullName: s.full_name })}
+                        onClick={() => { setError(null); setCreatingFor({ email: s.email, fullName: s.full_name }); }}
                       >
                         Create login
                       </Button>
@@ -630,7 +630,7 @@ export function AdminDash() {
                         size="sm"
                         variant="brandOutline"
                         disabled={createLogin.isPending}
-                        onClick={() => setCreatingFor({ email: s.email, fullName: s.full_name })}
+                        onClick={() => { setError(null); setCreatingFor({ email: s.email, fullName: s.full_name }); }}
                       >
                         Create login
                       </Button>
