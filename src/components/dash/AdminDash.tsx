@@ -920,6 +920,7 @@ export function AdminDash() {
               copy the sign-in details to send to them.
             </DialogDescription>
           </DialogHeader>
+          {error && <Note tone="error">{error}</Note>}
           <form
             className="grid gap-3"
             onSubmit={(e) => {
