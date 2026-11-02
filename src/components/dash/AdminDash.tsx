@@ -963,6 +963,67 @@ export function AdminDash() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={!!createdLogin}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreatedLogin(null);
+            setCopied(false);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Login created — share the details</DialogTitle>
+            <DialogDescription>
+              The account exists now. Send these details to {createdLogin?.email} by email, message
+              or printout — whatever you prefer.
+            </DialogDescription>
+          </DialogHeader>
+          {createdLogin && (
+            <div className="grid gap-1.5 rounded-lg border bg-muted/40 p-3 text-sm">
+              <div>
+                <span className="text-muted-foreground">Name: </span>
+                {createdLogin.fullName || "—"}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Role: </span>
+                {roleLabel(createdLogin.role)}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Sign-in email: </span>
+                {createdLogin.email}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Starting password: </span>
+                <code className="font-semibold">{createdLogin.password}</code>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Sign in here: </span>
+                {origin}
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Anyone who has these details can sign in, so share them privately. The person changes
+            the password after their first sign-in.
+          </p>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => { setCreatedLogin(null); setCopied(false); }}>
+              Close
+            </Button>
+            {typeof navigator !== "undefined" && "share" in navigator && (
+              <Button type="button" variant="outline" onClick={shareLoginDetails}>
+                Share…
+              </Button>
+            )}
+            <Button type="button" variant="brand" onClick={copyLoginDetails}>
+              {copied ? "Copied ✓" : "Copy details"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
