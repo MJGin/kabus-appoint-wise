@@ -32,6 +32,24 @@ export function AdminDash() {
   const [creatingFor, setCreatingFor] = useState<{ email: string; fullName: string | null } | null>(
     null,
   );
+  // Shown once after a login is created, so the Administrator can copy or
+  // share the sign-in details by whatever means they prefer.
+  const [createdLogin, setCreatedLogin] = useState<{
+    email: string;
+    fullName: string | null;
+    role: string;
+    password: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [origin, setOrigin] = useState("");
+
+  function roleLabel(role: string) {
+    if (role === "lecturer") return "Lecturer";
+    if (role === "dean") return "Dean";
+    if (role === "it_support") return "IT Support";
+    if (role === "student") return "Student";
+    return role;
+  }
 
   function fail(e: Error) {
     setInfo(null);
