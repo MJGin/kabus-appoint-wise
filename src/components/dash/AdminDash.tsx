@@ -916,7 +916,8 @@ export function AdminDash() {
             <DialogTitle>Create login</DialogTitle>
             <DialogDescription>
               Choose the starting password for {creatingFor?.email}. They sign in with it, then can
-              change it any time from the Forgot password page.
+              change it any time from the Forgot password page. When the account is created you can
+              copy the sign-in details to send to them.
             </DialogDescription>
           </DialogHeader>
           <form
