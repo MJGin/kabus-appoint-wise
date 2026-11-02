@@ -32,6 +32,24 @@ export function AdminDash() {
   const [creatingFor, setCreatingFor] = useState<{ email: string; fullName: string | null } | null>(
     null,
   );
+  // Shown once after a login is created, so the Administrator can copy or
+  // share the sign-in details by whatever means they prefer.
+  const [createdLogin, setCreatedLogin] = useState<{
+    email: string;
+    fullName: string | null;
+    role: string;
+    password: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [origin, setOrigin] = useState("");
+
+  function roleLabel(role: string) {
+    if (role === "lecturer") return "Lecturer";
+    if (role === "dean") return "Dean";
+    if (role === "it_support") return "IT Support";
+    if (role === "student") return "Student";
+    return role;
+  }
 
   function fail(e: Error) {
     setInfo(null);
@@ -273,14 +291,57 @@ export function AdminDash() {
         password: input.password,
       };
       if (input.fullName) payload.fullName = input.fullName;
-      await createApprovedLogin({ data: payload });
+      return await createApprovedLogin({ data: payload });
     },
-    onSuccess: (_d, input) => {
+    onSuccess: (result, input) => {
       setCreatingFor(null);
-      ok(`Login created for ${input.email} — they sign in with the password you set.`, []);
+      setError(null);
+      setOrigin(window.location.origin);
+      setCopied(false);
+      setCreatedLogin({
+        email: input.email,
+        fullName: input.fullName,
+        role: result.role,
+        password: input.password,
+      });
     },
     onError: fail,
   });
+
+  function loginDetailsText() {
+    if (!createdLogin) return "";
+    return [
+      "KABU SlotIn — your sign-in is ready",
+      "",
+      `Name: ${createdLogin.fullName || "—"}`,
+      `Role: ${roleLabel(createdLogin.role)}`,
+      `Sign-in email: ${createdLogin.email}`,
+      `Starting password: ${createdLogin.password}`,
+      "",
+      `Sign in here: ${origin}`,
+      "This password was set by the School Administrator. Please change it after your first sign-in.",
+    ].join("\n");
+  }
+
+  async function copyLoginDetails() {
+    if (!createdLogin) return;
+    try {
+      await navigator.clipboard.writeText(loginDetailsText());
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 4000);
+    } catch {
+      setError("Could not copy automatically. Select the details and copy them by hand.");
+    }
+  }
+
+  async function shareLoginDetails() {
+    if (!createdLogin) return;
+    try {
+      await navigator.share({ title: "KABU SlotIn sign-in", text: loginDetailsText() });
+    } catch {
+      // The person cancelled the share sheet; nothing to do.
+    }
+  }
 
   const addSemester = useMutation({
     mutationFn: async (values: {
@@ -855,7 +916,8 @@ export function AdminDash() {
             <DialogTitle>Create login</DialogTitle>
             <DialogDescription>
               Choose the starting password for {creatingFor?.email}. They sign in with it, then can
-              change it any time from the Forgot password page.
+              change it any time from the Forgot password page. When the account is created you can
+              copy the sign-in details to send to them.
             </DialogDescription>
           </DialogHeader>
           <form
@@ -900,6 +962,67 @@ export function AdminDash() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!createdLogin}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreatedLogin(null);
+            setCopied(false);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Login created — share the details</DialogTitle>
+            <DialogDescription>
+              The account exists now. Send these details to {createdLogin?.email} by email, message
+              or printout — whatever you prefer.
+            </DialogDescription>
+          </DialogHeader>
+          {createdLogin && (
+            <div className="grid gap-1.5 rounded-lg border bg-muted/40 p-3 text-sm">
+              <div>
+                <span className="text-muted-foreground">Name: </span>
+                {createdLogin.fullName || "—"}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Role: </span>
+                {roleLabel(createdLogin.role)}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Sign-in email: </span>
+                {createdLogin.email}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Starting password: </span>
+                <code className="font-semibold">{createdLogin.password}</code>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Sign in here: </span>
+                {origin}
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Anyone who has these details can sign in, so share them privately. The person changes
+            the password after their first sign-in.
+          </p>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => { setCreatedLogin(null); setCopied(false); }}>
+              Close
+            </Button>
+            {typeof navigator !== "undefined" && "share" in navigator && (
+              <Button type="button" variant="outline" onClick={shareLoginDetails}>
+                Share…
+              </Button>
+            )}
+            <Button type="button" variant="brand" onClick={copyLoginDetails}>
+              {copied ? "Copied ✓" : "Copy details"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
