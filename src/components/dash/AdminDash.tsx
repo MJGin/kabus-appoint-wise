@@ -291,14 +291,57 @@ export function AdminDash() {
         password: input.password,
       };
       if (input.fullName) payload.fullName = input.fullName;
-      await createApprovedLogin({ data: payload });
+      return await createApprovedLogin({ data: payload });
     },
-    onSuccess: (_d, input) => {
+    onSuccess: (result, input) => {
       setCreatingFor(null);
-      ok(`Login created for ${input.email} — they sign in with the password you set.`, []);
+      setError(null);
+      setOrigin(window.location.origin);
+      setCopied(false);
+      setCreatedLogin({
+        email: input.email,
+        fullName: input.fullName,
+        role: result.role,
+        password: input.password,
+      });
     },
     onError: fail,
   });
+
+  function loginDetailsText() {
+    if (!createdLogin) return "";
+    return [
+      "KABU SlotIn — your sign-in is ready",
+      "",
+      `Name: ${createdLogin.fullName || "—"}`,
+      `Role: ${roleLabel(createdLogin.role)}`,
+      `Sign-in email: ${createdLogin.email}`,
+      `Starting password: ${createdLogin.password}`,
+      "",
+      `Sign in here: ${origin}`,
+      "This password was set by the School Administrator. Please change it after your first sign-in.",
+    ].join("\n");
+  }
+
+  async function copyLoginDetails() {
+    if (!createdLogin) return;
+    try {
+      await navigator.clipboard.writeText(loginDetailsText());
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 4000);
+    } catch {
+      setError("Could not copy automatically. Select the details and copy them by hand.");
+    }
+  }
+
+  async function shareLoginDetails() {
+    if (!createdLogin) return;
+    try {
+      await navigator.share({ title: "KABU SlotIn sign-in", text: loginDetailsText() });
+    } catch {
+      // The person cancelled the share sheet; nothing to do.
+    }
+  }
 
   const addSemester = useMutation({
     mutationFn: async (values: {
