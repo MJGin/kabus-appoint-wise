@@ -2,6 +2,7 @@ import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/r
 
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+import { refreshExpiredAuth } from "@/lib/auth-refresh";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
