@@ -53,7 +53,12 @@ export function AdminDash() {
 
   function fail(e: Error) {
     setInfo(null);
-    setError(e.message.replace(/^.*?:\s*/, ""));
+    const raw = e.message.replace(/^.*?:\s*/, "");
+    setError(
+      /invalid token|no authorization|not signed in|unauthorized|jwt/i.test(raw)
+        ? "Your sign-in has expired. Refresh the page, sign in again, then try this once more."
+        : raw,
+    );
   }
   function ok(message: string, keys: string[]) {
     setError(null);
