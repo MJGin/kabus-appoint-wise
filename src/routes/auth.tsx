@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { takeResumePath } from "@/lib/session-resume";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
@@ -63,6 +64,13 @@ function SignInPage() {
 
   async function goToDashboard() {
     qc.clear();
+    // If the person was sent here by an expired session, land them back on
+    // the exact page they were working on (for example account setup).
+    const resume = takeResumePath();
+    if (resume) {
+      await navigate({ href: resume });
+      return;
+    }
     await navigate({ to: "/dashboard" });
   }
 

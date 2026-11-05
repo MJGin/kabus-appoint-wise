@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { AuthenticatorReset } from "@/components/dash/AuthenticatorReset";
@@ -19,14 +20,40 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { supabase } from "@/integrations/supabase/client";
 import { createApprovedLogin } from "@/lib/admin.functions";
+import { storeResumePath } from "@/lib/session-resume";
 import { BLOCKS, type Block, blockLabel, DAYS, dayLabel, formatDate, todayIso } from "@/lib/kabuslotin";
 
 type StaffRole = "lecturer" | "dean" | "it_support";
 
+/** Shown instead of a plain error when the sign-in has expired: explains what
+ * happened and offers a one-click way back through sign-in, returning to the
+ * same page afterwards. */
+function ExpiredSessionNote({ onSignInAgain }: { onSignInAgain: () => Promise<void> }) {
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm"
+    >
+      <span>
+        Your sign-in has expired. Sign in again (and confirm your code) to continue where you left
+        off — nothing here was changed or lost.
+      </span>
+      <Button size="sm" variant="brand" onClick={() => void onSignInAgain()}>
+        Sign in again
+      </Button>
+    </div>
+  );
+}
+
 export function AdminDash() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const routerLocation = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  // True when the last failure was an expired sign-in, so the app offers a
+  // one-click "Sign in again" that returns to this exact page afterwards.
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [editingStaff, setEditingStaff] = useState<string | null>(null);
   const [editingStudent, setEditingStudent] = useState<string | null>(null);
   const [creatingFor, setCreatingFor] = useState<{ email: string; fullName: string | null } | null>(
@@ -54,16 +81,36 @@ export function AdminDash() {
   function fail(e: Error) {
     setInfo(null);
     const raw = e.message.replace(/^.*?:\s*/, "");
+    const expired = /invalid token|no authorization|not signed in|unauthorized|jwt/i.test(raw);
+    setSessionExpired(expired);
     setError(
-      /invalid token|no authorization|not signed in|unauthorized|jwt/i.test(raw)
-        ? "Your sign-in has expired. Refresh the page, sign in again, then try this once more."
+      expired
+        ? "Your sign-in has expired. Sign in again to continue where you left off."
         : raw,
     );
   }
   function ok(message: string, keys: string[]) {
     setError(null);
+    setSessionExpired(false);
     setInfo(message);
     keys.forEach((k) => void qc.invalidateQueries({ queryKey: [k] }));
+  }
+
+  /**
+   * End the expired session cleanly and go to the sign-in page, remembering
+   * this page so the person lands right back on it after signing in (they
+   * still pass the second-step code check first, as always).
+   */
+  async function handleSignInAgain() {
+    await qc.cancelQueries();
+    qc.clear();
+    storeResumePath(`${routerLocation.pathname}${routerLocation.search}`);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* already signed out — continue to the sign-in page */
+    }
+    await navigate({ to: "/auth", replace: true });
   }
 
   const staff = useQuery({
@@ -443,7 +490,12 @@ export function AdminDash() {
 
   return (
     <div className="space-y-5">
-      {error && <Note tone="error">{error}</Note>}
+      {error &&
+        (sessionExpired ? (
+          <ExpiredSessionNote onSignInAgain={handleSignInAgain} />
+        ) : (
+          <Note tone="error">{error}</Note>
+        ))}
       {info && <Note>{info}</Note>}
 
       <AuthenticatorReset />
@@ -925,7 +977,12 @@ export function AdminDash() {
               copy the sign-in details to send to them.
             </DialogDescription>
           </DialogHeader>
-          {error && <Note tone="error">{error}</Note>}
+          {error &&
+            (sessionExpired ? (
+              <ExpiredSessionNote onSignInAgain={handleSignInAgain} />
+            ) : (
+              <Note tone="error">{error}</Note>
+            ))}
           <form
             className="grid gap-3"
             onSubmit={(e) => {
