@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -47,6 +48,7 @@ function ExpiredSessionNote({ onSignInAgain }: { onSignInAgain: () => Promise<vo
 
 export function AdminDash() {
   const qc = useQueryClient();
+  const createApprovedLoginFn = useServerFn(createApprovedLogin);
   const navigate = useNavigate();
   const routerLocation = useLocation();
   const [error, setError] = useState<string | null>(null);
@@ -78,9 +80,15 @@ export function AdminDash() {
     return role;
   }
 
-  function fail(e: Error) {
+  function fail(reason: unknown) {
     setInfo(null);
-    const raw = e.message.replace(/^.*?:\s*/, "");
+    const raw =
+      reason instanceof Error
+        ? reason.message
+        : typeof reason === "object" && reason !== null && "message" in reason &&
+            typeof reason.message === "string"
+          ? reason.message
+          : "Could not complete that action. Please try again.";
     const expired = /invalid token|no authorization|not signed in|unauthorized|jwt/i.test(raw);
     setSessionExpired(expired);
     setError(
@@ -343,7 +351,7 @@ export function AdminDash() {
         password: input.password,
       };
       if (input.fullName) payload.fullName = input.fullName;
-      return await createApprovedLogin({ data: payload });
+      return await createApprovedLoginFn({ data: payload });
     },
     onSuccess: (result, input) => {
       setCreatingFor(null);
