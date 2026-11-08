@@ -123,18 +123,24 @@ export async function authenticateAdministrator(): Promise<AdminContext> {
   }
   if (claims.aal !== "aal2") throw new Error("Finish the second step before doing this.");
 
-  const serviceKey = (process.env["SUPABASE_SERVICE_ROLE_KEY"] ?? "").trim();
+  // KABU_SERVICE_ROLE_KEY is the secret key of the project the website signs in
+  // with (the one that issued the token). It is its own secret because the
+  // platform-managed SUPABASE_SERVICE_ROLE_KEY can belong to a different
+  // backend. When it is set, only the verified address is used with it.
+  const ownKey = (process.env["KABU_SERVICE_ROLE_KEY"] ?? "").trim();
+  const serviceKey = ownKey || (process.env["SUPABASE_SERVICE_ROLE_KEY"] ?? "").trim();
   if (!serviceKey) {
     throw new Error(
-      "The server is missing SUPABASE_SERVICE_ROLE_KEY. Add it in the project secrets and republish.",
+      "The server has no service-role key. Add KABU_SERVICE_ROLE_KEY in the project secrets and republish.",
     );
   }
 
-  // The service-role key may only be valid at the address the server's own
-  // secrets name (for example the Lovable Cloud address) rather than the
-  // project's direct address, so try that one first, then the one that just
-  // verified the sign-in.
-  const adminUrls = [resolveBackend().url, backend.url].filter((u, i, all) => all.indexOf(u) === i);
+  // Without KABU_SERVICE_ROLE_KEY the platform key may only be valid at the
+  // address the server's own secrets name, so try that one first, then the one
+  // that just verified the sign-in.
+  const adminUrls = ownKey
+    ? [backend.url]
+    : [resolveBackend().url, backend.url].filter((u, i, all) => all.indexOf(u) === i);
   const adminFailures: string[] = [];
   let supabaseAdmin: SupabaseClient<Database> | null = null;
 
@@ -167,7 +173,7 @@ export async function authenticateAdministrator(): Promise<AdminContext> {
     throw new Error(
       `The server could not confirm you as Administrator. Tried: ${adminFailures.join(" | ")}. ` +
         `Your sign-in was issued by ${issuerHost}. SUPABASE_SERVICE_ROLE_KEY must be the ` +
-        "service-role (secret) key of that same project.",
+        "service-role (secret) key of that same project: save it as KABU_SERVICE_ROLE_KEY.",
     );
   }
 
