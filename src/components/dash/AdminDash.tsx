@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { supabase } from "@/integrations/supabase/client";
-import { createApprovedLogin } from "@/lib/admin.functions";
+import { createApprovedLogin, listLoginEmails, resetLoginPassword } from "@/lib/admin.functions";
 import { storeResumePath } from "@/lib/session-resume";
 import { BLOCKS, type Block, blockLabel, DAYS, dayLabel, formatDate, todayIso } from "@/lib/kabuslotin";
 
@@ -29,7 +29,13 @@ type StaffRole = "lecturer" | "dean" | "it_support";
 /** Shown instead of a plain error when the sign-in has expired: explains what
  * happened and offers a one-click way back through sign-in, returning to the
  * same page afterwards. */
-function ExpiredSessionNote({ onSignInAgain }: { onSignInAgain: () => Promise<void> }) {
+function ExpiredSessionNote({
+  onSignInAgain,
+  detail,
+}: {
+  onSignInAgain: () => Promise<void>;
+  detail?: string | null;
+}) {
   return (
     <div
       role="status"
@@ -38,6 +44,9 @@ function ExpiredSessionNote({ onSignInAgain }: { onSignInAgain: () => Promise<vo
       <span>
         Your sign-in has expired. Sign in again (and confirm your code) to continue where you left
         off — nothing here was changed or lost.
+        {detail && (
+          <span className="mt-1 block text-xs text-muted-foreground">Reason given: {detail}</span>
+        )}
       </span>
       <Button size="sm" variant="brand" onClick={() => void onSignInAgain()}>
         Sign in again
@@ -46,9 +55,19 @@ function ExpiredSessionNote({ onSignInAgain }: { onSignInAgain: () => Promise<vo
   );
 }
 
+/** True when a failure is about the sign-in token itself, not about the action. */
+function isAuthPlumbingFailure(reason: unknown) {
+  const raw = reason instanceof Error ? reason.message : String(reason ?? "");
+  return /invalid token|jwt expired|no authorization|not signed in|session missing|unauthorized/i.test(
+    raw,
+  );
+}
+
 export function AdminDash() {
   const qc = useQueryClient();
   const createApprovedLoginFn = useServerFn(createApprovedLogin);
+  const listLoginEmailsFn = useServerFn(listLoginEmails);
+  const resetLoginPasswordFn = useServerFn(resetLoginPassword);
   const navigate = useNavigate();
   const routerLocation = useLocation();
   const [error, setError] = useState<string | null>(null);
@@ -56,18 +75,28 @@ export function AdminDash() {
   // True when the last failure was an expired sign-in, so the app offers a
   // one-click "Sign in again" that returns to this exact page afterwards.
   const [sessionExpired, setSessionExpired] = useState(false);
+  // The technical reason behind an "expired" message, shown small so the
+  // Administrator (and whoever helps them) can tell what really happened.
+  const [expiredDetail, setExpiredDetail] = useState<string | null>(null);
   const [editingStaff, setEditingStaff] = useState<string | null>(null);
   const [editingStudent, setEditingStudent] = useState<string | null>(null);
   const [creatingFor, setCreatingFor] = useState<{ email: string; fullName: string | null } | null>(
     null,
   );
-  // Shown once after a login is created, so the Administrator can copy or
-  // share the sign-in details by whatever means they prefer.
+  // Recovery for someone who already has a login: email them a reset link, or
+  // set a new temporary password to hand over.
+  const [resettingFor, setResettingFor] = useState<{
+    email: string;
+    fullName: string | null;
+  } | null>(null);
+  // Shown once after a login is created (or a temporary password is set), so
+  // the Administrator can copy or share the sign-in details privately.
   const [createdLogin, setCreatedLogin] = useState<{
     email: string;
     fullName: string | null;
     role: string;
     password: string;
+    isReset?: boolean;
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState("");
@@ -89,17 +118,26 @@ export function AdminDash() {
             typeof reason.message === "string"
           ? reason.message
           : "Could not complete that action. Please try again.";
-    const expired = /invalid token|no authorization|not signed in|unauthorized|jwt/i.test(raw);
+    const expired = isAuthPlumbingFailure(raw);
     setSessionExpired(expired);
+    setExpiredDetail(expired ? raw : null);
     setError(
       expired
         ? "Your sign-in has expired. Sign in again to continue where you left off."
         : raw,
     );
   }
+  /** Wipe any old banner before opening a dialog, so a stale failure is never shown there. */
+  function clearNotices() {
+    setError(null);
+    setInfo(null);
+    setSessionExpired(false);
+    setExpiredDetail(null);
+  }
   function ok(message: string, keys: string[]) {
     setError(null);
     setSessionExpired(false);
+    setExpiredDetail(null);
     setInfo(message);
     keys.forEach((k) => void qc.invalidateQueries({ queryKey: [k] }));
   }
@@ -344,6 +382,24 @@ export function AdminDash() {
   // checks the caller is the Administrator and takes the role from the
   // approved lists; profiles and roles are built by the sign-up trigger
   // automatically.
+  // Runs a server call with a freshly refreshed session. If the server still
+  // rejects the sign-in token, refresh once more and retry before giving up,
+  // so a tab that has been open a while does not trip over a stale token.
+  async function withFreshSession<T>(call: () => Promise<T>): Promise<T> {
+    try {
+      await supabase.auth.refreshSession();
+    } catch {
+      /* the call below reports it if the session is truly gone */
+    }
+    try {
+      return await call();
+    } catch (e) {
+      if (!isAuthPlumbingFailure(e)) throw e;
+      await supabase.auth.refreshSession();
+      return await call();
+    }
+  }
+
   const createLogin = useMutation({
     mutationFn: async (input: { email: string; fullName: string | null; password: string }) => {
       const payload: { email: string; password: string; fullName?: string } = {
@@ -351,13 +407,16 @@ export function AdminDash() {
         password: input.password,
       };
       if (input.fullName) payload.fullName = input.fullName;
-      return await createApprovedLoginFn({ data: payload });
+      return await withFreshSession(() => createApprovedLoginFn({ data: payload }));
     },
     onSuccess: (result, input) => {
       setCreatingFor(null);
       setError(null);
+      setSessionExpired(false);
+      setExpiredDetail(null);
       setOrigin(window.location.origin);
       setCopied(false);
+      void qc.invalidateQueries({ queryKey: ["login-emails"] });
       setCreatedLogin({
         email: input.email,
         fullName: input.fullName,
@@ -368,18 +427,70 @@ export function AdminDash() {
     onError: fail,
   });
 
+  // Which approved emails already have a login. Those rows offer Reset
+  // password (recovery) instead of Create login.
+  const loginEmails = useQuery({
+    queryKey: ["login-emails"],
+    queryFn: async () => (await withFreshSession(() => listLoginEmailsFn())).emails,
+    retry: false,
+  });
+  function hasLogin(email: string) {
+    return !!loginEmails.data?.includes(email.trim().toLowerCase());
+  }
+
+  // Recovery for an existing login: email the person a reset link, or set a
+  // new temporary password to hand over.
+  const resetPassword = useMutation({
+    mutationFn: async (
+      input:
+        | { method: "email"; email: string; fullName: string | null }
+        | { method: "password"; email: string; fullName: string | null; password: string },
+    ) => {
+      const payload =
+        input.method === "email"
+          ? { method: "email" as const, email: input.email }
+          : { method: "password" as const, email: input.email, password: input.password };
+      return await withFreshSession(() => resetLoginPasswordFn({ data: payload }));
+    },
+    onSuccess: (result, input) => {
+      setResettingFor(null);
+      setError(null);
+      setSessionExpired(false);
+      setExpiredDetail(null);
+      if (input.method === "email") {
+        setInfo(
+          `A reset link was emailed to ${input.email}. It sends them to a page where they choose a new password.`,
+        );
+        return;
+      }
+      setInfo(null);
+      setOrigin(window.location.origin);
+      setCopied(false);
+      setCreatedLogin({
+        email: input.email,
+        fullName: input.fullName,
+        role: result.role,
+        password: input.password,
+        isReset: true,
+      });
+    },
+    onError: fail,
+  });
+
   function loginDetailsText() {
     if (!createdLogin) return "";
     return [
-      "KABU SlotIn — your sign-in is ready",
+      createdLogin.isReset
+        ? "KABU SlotIn — your password was reset"
+        : "KABU SlotIn — your sign-in is ready",
       "",
       `Name: ${createdLogin.fullName || "—"}`,
       `Role: ${roleLabel(createdLogin.role)}`,
       `Sign-in email: ${createdLogin.email}`,
-      `Starting password: ${createdLogin.password}`,
+      `${createdLogin.isReset ? "Temporary password" : "Starting password"}: ${createdLogin.password}`,
       "",
       `Sign in here: ${origin}`,
-      "This password was set by the School Administrator. Please change it after your first sign-in.",
+      "This password was set by the School Administrator. Please change it after you sign in.",
     ].join("\n");
   }
 
@@ -528,7 +639,7 @@ export function AdminDash() {
       </Panel>
 
       <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-        <Panel title="Approved staff emails" description="Type the name and email, then Approve. The account always takes the name written here, even if you add the person in the Supabase dashboard (which has no name box). Create login then makes the account — you choose the starting password when you press it.">
+        <Panel title="Approved staff emails" description="Type the name and email, then Approve. The account always takes the name written here, even if you add the person in the Supabase dashboard (which has no name box). Create login then makes the account — you choose the starting password when you press it. Once someone has a login the button becomes Reset password, for when they are locked out.">
           <form
             className="flex flex-wrap items-end gap-2"
             onSubmit={(e) => {
@@ -604,14 +715,31 @@ export function AdminDash() {
                           Edit name
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="brandOutline"
-                        disabled={createLogin.isPending}
-                        onClick={() => { setError(null); setCreatingFor({ email: s.email, fullName: s.full_name }); }}
-                      >
-                        Create login
-                      </Button>
+                      {hasLogin(s.email) ? (
+                        <Button
+                          size="sm"
+                          variant="brandOutline"
+                          disabled={resetPassword.isPending}
+                          onClick={() => {
+                            clearNotices();
+                            setResettingFor({ email: s.email, fullName: s.full_name });
+                          }}
+                        >
+                          Reset password
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="brandOutline"
+                          disabled={createLogin.isPending}
+                          onClick={() => {
+                            clearNotices();
+                            setCreatingFor({ email: s.email, fullName: s.full_name });
+                          }}
+                        >
+                          Create login
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" onClick={() => removeStaff.mutate(s.id)}>
                         Remove
                       </Button>
@@ -623,7 +751,7 @@ export function AdminDash() {
           </div>
         </Panel>
 
-        <Panel title="Approved student emails" description="Type the name and email, then Approve. The account always takes the name written here, even if you add the person in the Supabase dashboard (which has no name box). Create login makes the account and you choose its starting password.">
+        <Panel title="Approved student emails" description="Type the name and email, then Approve. The account always takes the name written here, even if you add the person in the Supabase dashboard (which has no name box). Create login makes the account and you choose its starting password. Once they have a login the button becomes Reset password, for when they are locked out.">
           <form
             className="flex flex-wrap items-end gap-2"
             onSubmit={(e) => {
@@ -691,14 +819,31 @@ export function AdminDash() {
                           Edit name
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="brandOutline"
-                        disabled={createLogin.isPending}
-                        onClick={() => { setError(null); setCreatingFor({ email: s.email, fullName: s.full_name }); }}
-                      >
-                        Create login
-                      </Button>
+                      {hasLogin(s.email) ? (
+                        <Button
+                          size="sm"
+                          variant="brandOutline"
+                          disabled={resetPassword.isPending}
+                          onClick={() => {
+                            clearNotices();
+                            setResettingFor({ email: s.email, fullName: s.full_name });
+                          }}
+                        >
+                          Reset password
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="brandOutline"
+                          disabled={createLogin.isPending}
+                          onClick={() => {
+                            clearNotices();
+                            setCreatingFor({ email: s.email, fullName: s.full_name });
+                          }}
+                        >
+                          Create login
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" onClick={() => removeStudent.mutate(s.id)}>
                         Remove
                       </Button>
@@ -987,7 +1132,7 @@ export function AdminDash() {
           </DialogHeader>
           {error &&
             (sessionExpired ? (
-              <ExpiredSessionNote onSignInAgain={handleSignInAgain} />
+              <ExpiredSessionNote onSignInAgain={handleSignInAgain} detail={expiredDetail} />
             ) : (
               <Note tone="error">{error}</Note>
             ))}
@@ -999,6 +1144,7 @@ export function AdminDash() {
               const password = String(f.get("password") ?? "");
               const confirm = String(f.get("confirm") ?? "");
               if (password !== confirm) {
+                setSessionExpired(false);
                 setError("The two passwords do not match.");
                 return;
               }
@@ -1037,6 +1183,102 @@ export function AdminDash() {
       </Dialog>
 
       <Dialog
+        open={!!resettingFor}
+        onOpenChange={(open) => {
+          if (!open) setResettingFor(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset password</DialogTitle>
+            <DialogDescription>
+              {resettingFor?.fullName ? `${resettingFor.fullName} · ` : ""}
+              {resettingFor?.email} already has a login. Send them a reset link, or set a new
+              temporary password yourself.
+            </DialogDescription>
+          </DialogHeader>
+          {error &&
+            (sessionExpired ? (
+              <ExpiredSessionNote onSignInAgain={handleSignInAgain} detail={expiredDetail} />
+            ) : (
+              <Note tone="error">{error}</Note>
+            ))}
+
+          <div className="grid gap-2 rounded-lg border bg-muted/40 p-3 text-sm">
+            <p className="font-medium text-brand-ink">Email a reset link</p>
+            <p className="text-muted-foreground">
+              A link goes to {resettingFor?.email}. They open it and choose their own new password,
+              so you never handle it.
+            </p>
+            <div>
+              <Button
+                type="button"
+                variant="brand"
+                size="sm"
+                disabled={resetPassword.isPending}
+                onClick={() => {
+                  if (!resettingFor) return;
+                  resetPassword.mutate({
+                    method: "email",
+                    email: resettingFor.email,
+                    fullName: resettingFor.fullName,
+                  });
+                }}
+              >
+                {resetPassword.isPending ? "Sending…" : "Send reset link"}
+              </Button>
+            </div>
+          </div>
+
+          <form
+            className="grid gap-3 rounded-lg border p-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const f = new FormData(e.currentTarget);
+              const password = String(f.get("password") ?? "");
+              const confirm = String(f.get("confirm") ?? "");
+              if (password !== confirm) {
+                setSessionExpired(false);
+                setError("The two passwords do not match.");
+                return;
+              }
+              if (!resettingFor) return;
+              resetPassword.mutate({
+                method: "password",
+                email: resettingFor.email,
+                fullName: resettingFor.fullName,
+                password,
+              });
+            }}
+          >
+            <p className="text-sm font-medium text-brand-ink">Or set a temporary password</p>
+            <PasswordInput
+              name="password"
+              label="New temporary password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+            <PasswordInput
+              name="confirm"
+              label="Repeat it"
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setResettingFor(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="brandOutline" disabled={resetPassword.isPending}>
+                {resetPassword.isPending ? "Saving…" : "Set password"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
         open={!!createdLogin}
         onOpenChange={(open) => {
           if (!open) {
@@ -1047,10 +1289,17 @@ export function AdminDash() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Login created — share the details</DialogTitle>
+            <DialogTitle>
+              {createdLogin?.isReset
+                ? "Password reset — share the details"
+                : "Login created — share the details"}
+            </DialogTitle>
             <DialogDescription>
-              The account exists now. Send these details to {createdLogin?.email} by email, message
-              or printout — whatever you prefer.
+              {createdLogin?.isReset
+                ? "The old password no longer works. "
+                : "The account exists now. "}
+              Send these details to {createdLogin?.email} by email, message or printout — whatever
+              you prefer.
             </DialogDescription>
           </DialogHeader>
           {createdLogin && (
@@ -1068,7 +1317,9 @@ export function AdminDash() {
                 {createdLogin.email}
               </div>
               <div>
-                <span className="text-muted-foreground">Starting password: </span>
+                <span className="text-muted-foreground">
+                  {createdLogin.isReset ? "Temporary password: " : "Starting password: "}
+                </span>
                 <code className="font-semibold">{createdLogin.password}</code>
               </div>
               <div>

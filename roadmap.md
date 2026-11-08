@@ -41,3 +41,8 @@ Waiting on user: the remaining staff to create their accounts at the sign-up pag
 - [x] Create login now works: pressing it asks the Administrator to type a starting password, then creates the account server-side (src/lib/admin.functions.ts, dialog in AdminDash). Every creation is written to the activity log.
 - [x] Root cause found and fixed: the button called a backend function that was never deployed, and eight database changes from mid-October (names on approved lists, semester switch, free-day booking rule, reschedule rule, consent records, self sign-up/teacher applications) had never been applied — all applied and verified.
 - [ ] Still waiting on the user: set up the Administrator account once, then test Create login; delete the four leftover test student accounts; upload staff emails + timetable.
+
+## Nov 8 — Create login hardening + password recovery
+- [x] Create login now refreshes the sign-in first and retries once if the server rejects the token; the "sign-in expired" banner shows the technical reason underneath, and old banners are cleared when a dialog opens.
+- [x] Staff and student lists show **Reset password** (instead of Create login) for anyone who already has a login. It can email the person a reset link, or set a temporary password to hand over. Both are administrator-only, need the second step, and are written to the activity log (src/lib/admin.functions.ts).
+- [ ] Still to confirm on the live site: the server's SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY secrets point at the same project the browser uses, and the project can send email (default Supabase email is heavily rate-limited; use a custom SMTP sender for real use).
