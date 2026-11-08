@@ -15,43 +15,26 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
-type Ctx = {
-  userId: string;
-  claims: unknown;
-  supabase: {
-    from: (t: "user_roles") => {
-      select: (c: string) => {
-        eq: (
-          k: string,
-          v: string,
-        ) => { maybeSingle: () => Promise<{ data: { role: string } | null }> };
-      };
-    };
-  };
-};
+type AdminClient = SupabaseClient<Database>;
 
-/** The caller must be the Administrator, signed in with the second step. */
-async function requireAdministrator(context: Ctx) {
-  const aal = (context.claims as { aal?: string } | null)?.aal;
-  if (aal !== "aal2") throw new Error("Finish the second step before doing this.");
-
-  const { data: callerRole } = await context.supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", context.userId)
-    .maybeSingle();
-  if (callerRole?.role !== "administrator") {
-    throw new Error("Only the School Administrator can manage logins.");
-  }
+/**
+ * Confirms the caller is the Administrator (second step done) and returns the
+ * service-role client. See src/lib/admin-auth.server.ts for why this does not
+ * use the generic auth middleware.
+ */
+async function adminContext() {
+  const { authenticateAdministrator } = await import("@/lib/admin-auth.server");
+  return await authenticateAdministrator();
 }
 
 /** What role would this approved email get? Taken from the lists, never the caller. */
 async function approvedRoleFor(
-  supabaseAdmin: typeof import("@/integrations/supabase/client.server").supabaseAdmin,
+  supabaseAdmin: AdminClient,
   email: string,
 ) {
   const { data: staffRow } = await supabaseAdmin
@@ -80,12 +63,9 @@ const createSchema = z.object({
 });
 
 export const createApprovedLogin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => createSchema.parse(data))
-  .handler(async ({ data, context }) => {
-    await requireAdministrator(context as unknown as Ctx);
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  .handler(async ({ data }) => {
+    const { userId, supabaseAdmin } = await adminContext();
 
     const approved = await approvedRoleFor(supabaseAdmin, data.email);
     if (!approved) throw new Error("That email is not on an approved list.");
@@ -107,7 +87,7 @@ export const createApprovedLogin = createServerFn({ method: "POST" })
     }
 
     await supabaseAdmin.from("activity_log").insert({
-      actor_id: context.userId,
+      actor_id: userId,
       action: "login_created",
       entity_type: "account",
       entity_id: created.user?.id ?? null,
@@ -124,10 +104,8 @@ export const createApprovedLogin = createServerFn({ method: "POST" })
  * who have one. Only emails are returned, nothing else about the accounts.
  */
 export const listLoginEmails = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await requireAdministrator(context as unknown as Ctx);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  .handler(async () => {
+    const { supabaseAdmin } = await adminContext();
 
     const { data, error } = await supabaseAdmin.from("profiles").select("email");
     if (error) throw new Error("Could not read which accounts exist. Try again.");
@@ -149,7 +127,7 @@ const resetSchema = z.discriminatedUnion("method", [
 
 /** Finds the auth user id for an email: profile first, then the auth user list. */
 async function findUserId(
-  supabaseAdmin: typeof import("@/integrations/supabase/client.server").supabaseAdmin,
+  supabaseAdmin: AdminClient,
   email: string,
 ): Promise<string | null> {
   const { data: profile } = await supabaseAdmin
@@ -178,18 +156,16 @@ async function findUserId(
  * action is written to the activity log.
  */
 export const resetLoginPassword = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => resetSchema.parse(data))
-  .handler(async ({ data, context }) => {
-    await requireAdministrator(context as unknown as Ctx);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  .handler(async ({ data }) => {
+    const { userId: callerId, supabaseAdmin } = await adminContext();
 
     const approved = await approvedRoleFor(supabaseAdmin, data.email);
     if (!approved) throw new Error("That email is not on an approved list.");
 
     const userId = await findUserId(supabaseAdmin, data.email);
     if (!userId) throw new Error("That person has no login yet. Use Create login first.");
-    if (userId === context.userId) {
+    if (userId === callerId) {
       throw new Error("Use the Forgot password page to change your own password.");
     }
 
@@ -215,7 +191,7 @@ export const resetLoginPassword = createServerFn({ method: "POST" })
     }
 
     await supabaseAdmin.from("activity_log").insert({
-      actor_id: context.userId,
+      actor_id: callerId,
       action: data.method === "email" ? "password_reset_emailed" : "password_reset_set",
       entity_type: "account",
       entity_id: userId,
