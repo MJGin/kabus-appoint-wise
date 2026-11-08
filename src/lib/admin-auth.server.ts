@@ -62,13 +62,31 @@ export type AdminContext = {
   supabaseAdmin: SupabaseClient<Database>;
 };
 
+type Backend = { url: string; publishableKey: string };
+
+/**
+ * Where to try verifying a token. First the backend the browser resolves. The
+ * same backend can also be reached through a proxy address (for example the
+ * Lovable Cloud address) that refuses server-side checks, so if the token was
+ * issued by this project's own address (a fixed value, never taken from the
+ * caller), that address is tried second. A token from any other project is
+ * never accepted.
+ */
+function candidateBackends(issuerHost: string): Backend[] {
+  const primary = resolveBackend();
+  const list: Backend[] = [primary];
+  const projectHost = hostOf(DEFAULT_SUPABASE_URL);
+  if (issuerHost === projectHost && hostOf(primary.url) !== projectHost) {
+    list.push({ url: DEFAULT_SUPABASE_URL, publishableKey: DEFAULT_SUPABASE_PUBLISHABLE_KEY });
+  }
+  return list;
+}
+
 /**
  * Confirms the caller is the School Administrator signed in with the second
  * step, and hands back the service-role client for the privileged work.
  */
 export async function authenticateAdministrator(): Promise<AdminContext> {
-  const backend = resolveBackend();
-
   const header = getRequest()?.headers.get("authorization") ?? "";
   if (!header.startsWith("Bearer ")) {
     throw new Error("Unauthorized: No authorization header provided");
@@ -76,18 +94,33 @@ export async function authenticateAdministrator(): Promise<AdminContext> {
   const token = header.slice("Bearer ".length).trim();
   if (token.split(".").length !== 3) throw new Error("Unauthorized: Invalid token");
 
-  const verifier = createClient<Database>(backend.url, backend.publishableKey, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-  });
-  const { data, error } = await verifier.auth.getClaims(token);
-  if (error || !data?.claims?.sub) {
-    throw new Error(
-      `Unauthorized: Invalid token. The server checked it against ${hostOf(backend.url)}, ` +
-        `but it was issued by ${issuerHostOf(token)}.`,
-    );
+  const issuerHost = issuerHostOf(token);
+  const failures: string[] = [];
+  let backend: Backend | null = null;
+  let claims: { sub: string; aal?: string } | null = null;
+
+  for (const candidate of candidateBackends(issuerHost)) {
+    const verifier = createClient<Database>(candidate.url, candidate.publishableKey, {
+      auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+    });
+    try {
+      const { data, error } = await verifier.auth.getClaims(token);
+      if (!error && data?.claims?.sub) {
+        backend = candidate;
+        claims = data.claims as { sub: string; aal?: string };
+        break;
+      }
+      failures.push(`${hostOf(candidate.url)}: ${error?.message ?? "no claims returned"}`);
+    } catch (e) {
+      failures.push(`${hostOf(candidate.url)}: ${e instanceof Error ? e.message : "request failed"}`);
+    }
   }
 
-  const claims = data.claims as { sub: string; aal?: string };
+  if (!backend || !claims) {
+    throw new Error(
+      `Unauthorized: Invalid token. Issued by ${issuerHost}. Checked: ${failures.join(" | ")}`,
+    );
+  }
   if (claims.aal !== "aal2") throw new Error("Finish the second step before doing this.");
 
   const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
@@ -108,7 +141,7 @@ export async function authenticateAdministrator(): Promise<AdminContext> {
     .maybeSingle();
   if (roleError) {
     throw new Error(
-      `The server could not read accounts on ${hostOf(backend.url)}. ` +
+      `The server could not read accounts on ${hostOf(backend.url)} (${roleError.message}). ` +
         "Check that SUPABASE_SERVICE_ROLE_KEY belongs to that same project.",
     );
   }
