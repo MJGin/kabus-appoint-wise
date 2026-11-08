@@ -99,6 +99,8 @@ export function AdminDash() {
     isReset?: boolean;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  // Message shown inside the share dialog (copy / share / email results).
+  const [shareNote, setShareNote] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
 
   function roleLabel(role: string) {
@@ -416,6 +418,7 @@ export function AdminDash() {
       setExpiredDetail(null);
       setOrigin(window.location.origin);
       setCopied(false);
+      setShareNote(null);
       void qc.invalidateQueries({ queryKey: ["login-emails"] });
       setCreatedLogin({
         email: input.email,
@@ -494,24 +497,61 @@ export function AdminDash() {
     ].join("\n");
   }
 
+  async function copyText(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async function copyLoginDetails() {
     if (!createdLogin) return;
-    try {
-      await navigator.clipboard.writeText(loginDetailsText());
+    if (await copyText(loginDetailsText())) {
+      setShareNote(null);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 4000);
-    } catch {
-      setError("Could not copy automatically. Select the details and copy them by hand.");
+    } else {
+      setShareNote("Could not copy automatically. Select the details above and copy them by hand.");
     }
   }
 
   async function shareLoginDetails() {
     if (!createdLogin) return;
+    setShareNote(null);
     try {
       await navigator.share({ title: "KABU SlotIn sign-in", text: loginDetailsText() });
-    } catch {
-      // The person cancelled the share sheet; nothing to do.
+    } catch (e) {
+      // Closing the share sheet is not a failure.
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      // Some browsers and embedded previews refuse to open the share sheet.
+      // Copy the details instead, so the Administrator is never left with nothing.
+      if (await copyText(loginDetailsText())) {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 4000);
+        setShareNote(
+          "This browser would not open the share sheet, so the details were copied instead. Paste them into a message.",
+        );
+      } else {
+        setShareNote(
+          "This browser would not open the share sheet. Use Email it, or select the details above and copy them by hand.",
+        );
+      }
     }
+  }
+
+  /** Opens the Administrator's own mail app with the details addressed to the person. */
+  function emailLoginDetails() {
+    if (!createdLogin) return;
+    const subject = createdLogin.isReset
+      ? "KABU SlotIn — your password was reset"
+      : "KABU SlotIn — your sign-in is ready";
+    const href = `mailto:${encodeURIComponent(createdLogin.email)}?subject=${encodeURIComponent(
+      subject,
+    )}&body=${encodeURIComponent(loginDetailsText())}`;
+    setShareNote("Your email app should open with the message ready. If nothing opens, use Copy details instead.");
+    window.location.href = href;
   }
 
   const addSemester = useMutation({
@@ -1284,6 +1324,7 @@ export function AdminDash() {
           if (!open) {
             setCreatedLogin(null);
             setCopied(false);
+            setShareNote(null);
           }
         }}
       >
@@ -1332,9 +1373,17 @@ export function AdminDash() {
             Anyone who has these details can sign in, so share them privately. The person changes
             the password after their first sign-in.
           </p>
+          {shareNote && (
+            <p role="status" className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+              {shareNote}
+            </p>
+          )}
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => { setCreatedLogin(null); setCopied(false); }}>
+            <Button type="button" variant="ghost" onClick={() => { setCreatedLogin(null); setCopied(false); setShareNote(null); }}>
               Close
+            </Button>
+            <Button type="button" variant="outline" onClick={emailLoginDetails}>
+              Email it
             </Button>
             {typeof navigator !== "undefined" && "share" in navigator && (
               <Button type="button" variant="outline" onClick={shareLoginDetails}>
