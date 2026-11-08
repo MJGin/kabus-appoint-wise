@@ -171,7 +171,9 @@ export async function authenticateAdministrator(): Promise<AdminContext> {
 
   if (!supabaseAdmin) {
     throw new Error(
-      `The server could not confirm you as Administrator. Tried: ${adminFailures.join(" | ")}. ` +
+      `The server could not confirm you as Administrator. ` +
+        `KABU_SERVICE_ROLE_KEY: ${ownKey ? `found (${ownKey.length} characters)` : "NOT found by the server"}. ` +
+        `Tried: ${adminFailures.join(" | ")}. ` +
         `Your sign-in was issued by ${issuerHost}. SUPABASE_SERVICE_ROLE_KEY must be the ` +
         "service-role (secret) key of that same project: save it as KABU_SERVICE_ROLE_KEY.",
     );
