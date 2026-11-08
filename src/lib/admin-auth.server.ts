@@ -123,26 +123,45 @@ export async function authenticateAdministrator(): Promise<AdminContext> {
   }
   if (claims.aal !== "aal2") throw new Error("Finish the second step before doing this.");
 
-  const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
+  const serviceKey = (process.env["SUPABASE_SERVICE_ROLE_KEY"] ?? "").trim();
   if (!serviceKey) {
     throw new Error(
       "The server is missing SUPABASE_SERVICE_ROLE_KEY. Add it in the project secrets and republish.",
     );
   }
-  const supabaseAdmin = createClient<Database>(backend.url, serviceKey, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-  });
 
-  // The role comes from the database, never from the caller.
-  const { data: callerRole, error: roleError } = await supabaseAdmin
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", claims.sub)
-    .maybeSingle();
-  if (roleError) {
+  // The service-role key may only be valid at the address the server's own
+  // secrets name (for example the Lovable Cloud address) rather than the
+  // project's direct address, so try that one first, then the one that just
+  // verified the sign-in.
+  const adminUrls = [resolveBackend().url, backend.url].filter((u, i, all) => all.indexOf(u) === i);
+  const adminFailures: string[] = [];
+  let supabaseAdmin: SupabaseClient<Database> | null = null;
+  let callerRole: { role: string } | null = null;
+
+  for (const url of adminUrls) {
+    const client = createClient<Database>(url, serviceKey, {
+      auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+    });
+    // The role comes from the database, never from the caller.
+    const { data, error } = await client
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", claims.sub)
+      .maybeSingle();
+    if (error) {
+      adminFailures.push(`${hostOf(url)}: ${error.message}`);
+      continue;
+    }
+    supabaseAdmin = client;
+    callerRole = data;
+    break;
+  }
+
+  if (!supabaseAdmin) {
     throw new Error(
-      `The server could not read accounts on ${hostOf(backend.url)} (${roleError.message}). ` +
-        "Check that SUPABASE_SERVICE_ROLE_KEY belongs to that same project.",
+      `The server could not read accounts. Tried: ${adminFailures.join(" | ")}. ` +
+        "Check that SUPABASE_SERVICE_ROLE_KEY is the service-role (secret) key of this project.",
     );
   }
   if (callerRole?.role !== "administrator") {
