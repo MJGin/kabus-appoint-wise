@@ -137,13 +137,13 @@ export async function authenticateAdministrator(): Promise<AdminContext> {
   const adminUrls = [resolveBackend().url, backend.url].filter((u, i, all) => all.indexOf(u) === i);
   const adminFailures: string[] = [];
   let supabaseAdmin: SupabaseClient<Database> | null = null;
-  let callerRole: { role: string } | null = null;
 
   for (const url of adminUrls) {
     const client = createClient<Database>(url, serviceKey, {
       auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
     });
-    // The role comes from the database, never from the caller.
+    // The role comes from the database, never from the caller. Only a database
+    // that confirms this account is the Administrator is ever used.
     const { data, error } = await client
       .from("user_roles")
       .select("role")
@@ -153,19 +153,22 @@ export async function authenticateAdministrator(): Promise<AdminContext> {
       adminFailures.push(`${hostOf(url)}: ${error.message}`);
       continue;
     }
+    if (data?.role !== "administrator") {
+      adminFailures.push(
+        `${hostOf(url)}: no Administrator role for your account there (found: ${data?.role ?? "no role"})`,
+      );
+      continue;
+    }
     supabaseAdmin = client;
-    callerRole = data;
     break;
   }
 
   if (!supabaseAdmin) {
     throw new Error(
-      `The server could not read accounts. Tried: ${adminFailures.join(" | ")}. ` +
-        "Check that SUPABASE_SERVICE_ROLE_KEY is the service-role (secret) key of this project.",
+      `The server could not confirm you as Administrator. Tried: ${adminFailures.join(" | ")}. ` +
+        `Your sign-in was issued by ${issuerHost}. SUPABASE_SERVICE_ROLE_KEY must be the ` +
+        "service-role (secret) key of that same project.",
     );
-  }
-  if (callerRole?.role !== "administrator") {
-    throw new Error("Only the School Administrator can manage logins.");
   }
 
   return { userId: claims.sub, supabaseAdmin };
