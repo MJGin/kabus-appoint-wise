@@ -9,6 +9,7 @@ import { LecturerDash } from "@/components/dash/LecturerDash";
 import { StudentDash } from "@/components/dash/StudentDash";
 import { Empty, Note } from "@/components/dash/parts";
 import { ConsentGate } from "@/components/consent/ConsentGate";
+import { WithdrawConsentButton } from "@/components/consent/WithdrawConsentButton";
 import { hasCurrentConsent, useMyConsent } from "@/lib/consent";
 import { Logo } from "@/components/brand/Logo";
 import { NotificationsBell } from "@/components/NotificationsBell";
@@ -107,6 +108,7 @@ function DashboardPage() {
             >
               My consent
             </Link>
+            <WithdrawConsentButton />
             <ThemeToggle />
             <Button size="sm" variant="ghost" onClick={signOut}>
               Sign out

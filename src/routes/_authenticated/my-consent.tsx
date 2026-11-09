@@ -1,14 +1,11 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
 
 import { Logo } from "@/components/brand/Logo";
 import { ThemeToggle } from "@/components/brand/ThemeToggle";
 import { ConsentText } from "@/components/consent/ConsentText";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { CONSENT_FORM_VERSION, hasCurrentConsent, useMyConsent } from "@/lib/consent";
+import { WithdrawConsentButton } from "@/components/consent/WithdrawConsentButton";
+import { hasCurrentConsent, useMyConsent } from "@/lib/consent";
 import { formatMoment } from "@/lib/kabuslotin";
 
 export const Route = createFileRoute("/_authenticated/my-consent")({
@@ -23,31 +20,8 @@ const LABEL: Record<string, string> = {
 };
 
 function MyConsentPage() {
-  const qc = useQueryClient();
   const consent = useMyConsent();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const row = consent.data;
-
-  async function withdraw() {
-    if (!row) return;
-    if (
-      !window.confirm("Withdraw your consent? The booking area will close until you consent again.")
-    )
-      return;
-    setBusy(true);
-    setError(null);
-    const { error: rpcError } = await supabase.rpc("record_consent", {
-      _decision: "withdraw",
-      _form_version: CONSENT_FORM_VERSION,
-      _full_name: row.full_name,
-      _age_confirmed: false,
-    });
-    setBusy(false);
-    if (rpcError)
-      return setError("We could not withdraw your consent just now. Try again in a moment.");
-    await qc.invalidateQueries({ queryKey: ["my-consent"] });
-  }
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
@@ -111,19 +85,12 @@ function MyConsentPage() {
             </dl>
           )}
 
-          {error && (
-            <p role="alert" className="mt-4 text-sm text-destructive">
-              {error}
-            </p>
-          )}
-
           {row?.decision === "consent" && (
             <div className="mt-5">
-              <Button variant="outline" disabled={busy} onClick={() => void withdraw()}>
-                {busy ? "Withdrawing…" : "Withdraw my consent"}
-              </Button>
+              <WithdrawConsentButton label="Withdraw my consent" />
               <p className="mt-2 text-xs text-muted-foreground">
-                To have your data erased, email the project leader as described in the form below.
+                Withdrawing takes effect immediately and you can consent again at any time. To have
+                your data erased, email the project leader as described in the form below.
               </p>
             </div>
           )}
